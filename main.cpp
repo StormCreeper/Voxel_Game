@@ -1,24 +1,3 @@
-// ----------------------------------------------------------------------------
-// main.cpp
-//
-//  Created on: 24 Jul 2020
-//      Author: Kiwon Um
-//      Modified by Telo PHILIPPE for the IGR200 class
-//        Mail: kiwon.um@telecom-paris.fr
-//
-// Description: IGR201 Practical; OpenGL and Shaders (DO NOT distribute!)
-//
-// Copyright 2020-2023 Kiwon Um
-//
-// The copyright to the computer program(s) herein is the property of Kiwon Um,
-// Telecom Paris, France. The program(s) may be used and/or copied only with
-// the written permission of Kiwon Um or in accordance with the terms and
-// conditions stipulated in the agreement/contract under which the program(s)
-// have been supplied.
-// ----------------------------------------------------------------------------
-
-#define _USE_MATH_DEFINES
-
 #include "mesh.hpp"
 #include "camera.hpp"
 #include "shader.hpp"
