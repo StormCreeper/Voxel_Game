@@ -1,8 +1,3 @@
-/*
-    camera.hpp
-    author: Kiwon Um, adapted by Telo PHILIPPE
-*/
-
 #ifndef CAMERA_H
 #define CAMERA_H
 

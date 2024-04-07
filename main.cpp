@@ -120,7 +120,7 @@ void initGLFW() {
 
 void initOpenGL() {
     // Load extensions for modern OpenGL
-    if (!gladLoadGL(glfwGetProcAddress)) {
+    if (!gladLoadGL()) {
         std::cerr << "ERROR: Failed to initialize OpenGL context" << std::endl;
         glfwTerminate();
         std::exit(EXIT_FAILURE);
