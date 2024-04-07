@@ -28,7 +28,7 @@ public:
         return modelMatrix;
     }
 
-private:
+protected:
     std::shared_ptr<Mesh> mesh {};
     std::shared_ptr<Texture> texture {};
     glm::mat4 modelMatrix = glm::mat4(1.0f);
