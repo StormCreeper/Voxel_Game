@@ -49,7 +49,8 @@ void Texture::load(const std::string& filename) {
 }
 
 void Texture::bind() const {
-    glBindTexture(GL_TEXTURE_2D, m_textureID);
+    if(m_textureID)
+        glBindTexture(GL_TEXTURE_2D, m_textureID);
 }
 
 void Texture::unbind() const {

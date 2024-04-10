@@ -13,7 +13,10 @@
 
 class Object3D {
 public:
-    Object3D() {}
+    Object3D() {
+        mesh = std::make_shared<Mesh>();
+        texture = std::make_shared<Texture>();
+    }
     Object3D(std::shared_ptr<Mesh> mesh, std::shared_ptr<Texture> texture) {
         this->mesh = mesh;
         this->texture = texture;

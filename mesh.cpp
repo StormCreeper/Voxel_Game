@@ -11,9 +11,7 @@
 #include <iostream>
 
 void Mesh::initGPUGeometry(const std::vector<float> &vertexPositions, const std::vector<float> &vertexNormals, const std::vector<float> &vertexUVs, const std::vector<unsigned int> &triangleIndices) {
-    // Create a single handle, vertex array object that contains attributes,
-    // vertex buffer objects (e.g., vertex's position, normal, and color)
-    glGenVertexArrays(1, &m_vao);  // If your system doesn't support OpenGL 4.5, you should use this instead of glCreateVertexArrays.
+    glGenVertexArrays(1, &m_vao);
 
     glBindVertexArray(m_vao);
 
