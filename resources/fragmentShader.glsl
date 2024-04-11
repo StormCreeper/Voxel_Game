@@ -23,7 +23,7 @@ uniform vec3 u_objectColor;
 uniform sampler2D u_texture;
 
 void main() {
-	vec3 objColor = u_objectColor;//texture(u_texture, textureUV).xyz;
+	vec3 objColor = texture(u_texture, textureUV).xyz;
 
 	vec3 normal = normalize(vertexNormal);
 	
@@ -35,5 +35,5 @@ void main() {
 
 	vec3 diffuse = objColor * diff;
 
-	outColor = vec4(ambient + diffuse, 1.0f);
+	outColor = vec4(ambient * 0.5 + diffuse * 0.5, 1.0f);
 }

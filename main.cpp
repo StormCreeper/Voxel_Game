@@ -44,6 +44,8 @@ void windowSizeCallback(GLFWwindow *window, int width, int height) {
     glViewport(0, 0, (GLint)width, (GLint)height);  // Dimension of the rendering region in the window
 }
 
+bool shiftPressed = false;
+
 // Executed each time a key is entered.
 void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if(action == GLFW_PRESS) {
@@ -56,19 +58,35 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
         if ((key == GLFW_KEY_ESCAPE || key == GLFW_KEY_Q)) {
             glfwSetWindowShouldClose(window, true);  // Closes the application if the escape key is pressed
         }
-
+        if(key == GLFW_KEY_LEFT_SHIFT)
+            shiftPressed = true;
+    }
+    if(action == GLFW_RELEASE) {
+        if(key == GLFW_KEY_LEFT_SHIFT) shiftPressed = false;
     }
 }
 
 float g_cameraDistance = 5.0f;
 float g_cameraAngleX = 0.0f;
 
+float g_yaw = 0.0f;
+float g_pitch = 0.0f;
+
 // Scroll for zooming
 void scrollCallback(GLFWwindow *window, double xoffset, double yoffset) {
-    g_cameraDistance -= yoffset * 0.5f;
-    g_cameraDistance = std::max(g_cameraDistance, 0.1f);
+    if(shiftPressed) {
+        g_cameraDistance -= yoffset * 0.1f;
+        g_cameraDistance = std::max(g_cameraDistance, 0.1f);
+    }
+    else {
+        g_yaw += xoffset * 0.04f;
+        g_pitch += yoffset * 0.04f;
 
-    g_cameraAngleX -= xoffset * 0.05f;
+        float max = glm::pi<float>()/2 - 0.01f;
+
+        if(g_pitch > max) g_pitch = max;
+        if(g_pitch < -max) g_pitch = -max;
+    }
 }
 
 void errorCallback(int error, const char *desc) {
@@ -278,9 +296,9 @@ void render() {
     setUniform(g_program, "u_cameraPosition", g_camera.getPosition());
 
     setUniform(g_program, "u_sunColor", glm::vec3(1.0f, 1.0f, 0.0f));
-    setUniform(g_program, "u_sunPosition", glm::vec3(5.0f, 10.0f, 4.0f));
+    setUniform(g_program, "u_sunPosition", glm::vec3(5.0f, 25.0f, 4.0f));
     
-    setUniform(g_program, "u_ambientLight", glm::vec3(0.1f, 0.1f, 0.1f));
+    setUniform(g_program, "u_ambientLight", glm::vec3(1.0f, 1.0f, 1.0f));
 
     setUniform(g_program, "u_texture", 0);
     setUniform(g_program, "u_objectColor", glm::vec3(1, 1, 1));
@@ -291,13 +309,18 @@ void render() {
 // Update any accessible variable based on the current time
 void update(const float currentTimeInSec) {
     
-    // Set the camera target on the target object
-    // Get the position of the target object in world space
-    glm::vec3 targetPosition = glm::vec3(0.0);
+    glm::vec3 targetPosition = glm::vec3(5.0f, 5.0f, 5.0f);
     g_camera.setTarget(targetPosition);
 
-    glm::vec3 cameraOffset = glm::normalize(glm::vec3(cos(g_cameraAngleX), 0.5f, sin(g_cameraAngleX))) * g_cameraDistance;
-    g_camera.setPosition(targetPosition + cameraOffset);
+    //glm::vec3 cameraOffset = glm::normalize(glm::vec3(cos(g_cameraAngleX), 0.3f, sin(g_cameraAngleX))) * (1.1f + g_cameraDistance);
+    glm::vec4 cameraOffset(0, 0, 1, 0);
+    
+    glm::mat4 rot1 = glm::rotate(glm::mat4(1), g_yaw,   glm::vec3(0, 1, 0));
+    glm::mat4 rot2 = glm::rotate(glm::mat4(1), g_pitch, glm::vec3(1, 0, 0));
+    
+    cameraOffset = g_cameraDistance * rot1 * rot2 * cameraOffset;
+    
+    g_camera.setPosition(targetPosition + glm::vec3(cameraOffset));
 }
 
 int main(int argc, char **argv) {

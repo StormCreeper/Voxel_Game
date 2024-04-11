@@ -11,9 +11,11 @@
 #include "mesh.hpp"
 #include "texture.hpp"
 
+#include <iostream>
 class Object3D {
 public:
     Object3D() {
+        std::cout << "Object created" << std::endl;
         mesh = std::make_shared<Mesh>();
         texture = std::make_shared<Texture>();
     }
