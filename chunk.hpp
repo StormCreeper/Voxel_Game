@@ -19,11 +19,17 @@ enum DIR {
 class Chunk : public Object3D {
    public:
     static const glm::ivec3 chunk_size;
+    static std::shared_ptr<Texture> chunk_texture;
+
+    static void init_chunks() {
+        chunk_texture = std::make_shared<Texture>("../resources/media/atlas.jpg");
+    }
 
    public:
     Chunk(glm::ivec2 pos) {
         std::cout << "Chunk created at (" << pos.x << ", " << pos.y << ")" << std::endl;
         this->pos = pos;
+        this->modelMatrix = glm::translate(modelMatrix, glm::vec3(pos.x * chunk_size.x, 0, pos.y * chunk_size.z));
     }
 
     ~Chunk() {
@@ -32,9 +38,9 @@ class Chunk : public Object3D {
     }
 
     void init() {
-        texture = std::make_shared<Texture>("../resources/media/atlas.jpg");
         generateVoxelMap();
         buildMesh();
+        this->texture = chunk_texture;
     }
 
    private:

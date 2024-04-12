@@ -226,6 +226,7 @@ void createCubeMap() {
 // Define your mesh(es) in the CPU memory
 void initCPUgeometry() {
     createCubeMap();
+    Chunk::init_chunks();
 }
 
 void initCamera() {
@@ -235,7 +236,7 @@ void initCamera() {
 
     g_camera.setPosition(glm::vec3(0.0, 0.0, 3.0));
     g_camera.setNear(0.1);
-    g_camera.setFar(80);
+    g_camera.setFar(500);
 
     g_camera.setFoV(90);
 }
@@ -315,7 +316,7 @@ void update(const float currentTimeInSec) {
 
     g_camera.setPosition(targetPosition + glm::vec3(cameraOffset));
 
-    g_chunkManager.updateQueue(glm::vec3(0));
+    g_chunkManager.updateQueue(targetPosition + glm::vec3(cameraOffset));
     g_chunkManager.generateOneChunk();
 }
 

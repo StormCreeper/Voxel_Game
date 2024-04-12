@@ -8,7 +8,8 @@
 
 struct cmpChunkPos {
     bool operator()(const glm::ivec2& a, const glm::ivec2& b) const {
-        return (a.x == b.x && a.y < b.y) || a.x < a.y;
+        if (a.x == b.x) return a.y < b.y;
+        return a.x < b.x;
     }
 };
 
@@ -30,8 +31,14 @@ class ChunkManager {
 
         if (auto search = chunks.find(chunk_pos); search != chunks.end()) return;  // Chunk has already been created for some reason
 
-        chunks[chunk_pos] = std::make_shared<Chunk>(chunk_pos);
-        chunks[chunk_pos]->init();
+        auto chunk = std::shared_ptr<Chunk>(new Chunk(chunk_pos));
+        if (!chunk) {
+            std::cout << "Noooooo chunk creation failed :(((((\n";
+            exit(-1);
+        }
+        chunk->init();
+
+        chunks.insert_or_assign(chunk_pos, chunk);
     }
 
     void renderAll(GLuint program) {
