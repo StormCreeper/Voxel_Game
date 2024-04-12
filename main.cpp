@@ -309,7 +309,7 @@ void render() {
 // Update any accessible variable based on the current time
 void update(const float currentTimeInSec) {
     
-    glm::vec3 targetPosition = glm::vec3(5.0f, 5.0f, 5.0f);
+    glm::vec3 targetPosition = glm::vec3(5.0f, 60.0f, 5.0f);
     g_camera.setTarget(targetPosition);
 
     //glm::vec3 cameraOffset = glm::normalize(glm::vec3(cos(g_cameraAngleX), 0.3f, sin(g_cameraAngleX))) * (1.1f + g_cameraDistance);

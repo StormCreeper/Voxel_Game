@@ -24,6 +24,7 @@ set(SOURCES
   object3d.hpp
   texture.hpp
   chunk.hpp
+  chunk_manager.hpp
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES})
