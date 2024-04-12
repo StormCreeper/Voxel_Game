@@ -43,6 +43,13 @@ class Chunk : public Object3D {
         this->texture = chunk_texture;
     }
 
+    void init_no_generate() {
+        buildMesh();
+        this->texture = chunk_texture;
+    }
+
+    void buildMesh();
+
    private:
     inline int index(int x, int y, int z) const {
         return x + y * chunk_size.x + z * chunk_size.x * chunk_size.y;
@@ -54,13 +61,13 @@ class Chunk : public Object3D {
     void push_triangle(glm::ivec3 tri);
 
     void push_face(DIR dir, int texIndex);
-    void buildMesh();
 
-    int getBlock(int x, int y, int z);
+    uint8_t getBlock(int x, int y, int z);
+
+   public:
+    uint8_t *voxelMap{};
 
    private:
-    int *voxelMap{};
-
     std::vector<float> vp{};
     std::vector<float> vn{};
     std::vector<float> vuv{};

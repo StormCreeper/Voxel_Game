@@ -46,6 +46,8 @@ bool shiftPressed = false;
 
 // Executed each time a key is entered.
 void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+    static bool p_unpressed = false;
+    static bool o_unpressed = false;
     if (action == GLFW_PRESS) {
         if (key == GLFW_KEY_W) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -58,9 +60,22 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
         }
         if (key == GLFW_KEY_LEFT_SHIFT)
             shiftPressed = true;
+
+        if (key == GLFW_KEY_P && p_unpressed) {
+            p_unpressed = false;
+
+            g_chunkManager.serializeChunk(glm::ivec2(0, 0));
+        }
+        if (key == GLFW_KEY_O && o_unpressed) {
+            o_unpressed = false;
+
+            g_chunkManager.chunks.insert_or_assign(glm::ivec2(0, 0), g_chunkManager.deserializeChunk(glm::ivec2(0, 0)));
+        }
     }
     if (action == GLFW_RELEASE) {
         if (key == GLFW_KEY_LEFT_SHIFT) shiftPressed = false;
+        if (key == GLFW_KEY_P) p_unpressed = true;
+        if (key == GLFW_KEY_O) o_unpressed = true;
     }
 }
 

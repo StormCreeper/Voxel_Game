@@ -35,5 +35,5 @@ void main() {
 
 	vec3 diffuse = objColor * diff;
 
-	outColor = vec4(ambient * 0.5 + diffuse * 0.5, 1.0f);
+	outColor = vec4(ambient * 0.7 + diffuse * 0.3, 1.0f);
 }

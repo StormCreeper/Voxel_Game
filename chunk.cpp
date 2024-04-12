@@ -4,7 +4,7 @@ const glm::ivec3 Chunk::chunk_size = {10, 64, 10};
 std::shared_ptr<Texture> Chunk::chunk_texture{};
 
 void Chunk::generateVoxelMap() {
-    voxelMap = (int *)malloc(chunk_size.x * chunk_size.y * chunk_size.z * sizeof(int));
+    voxelMap = (uint8_t *)malloc(chunk_size.x * chunk_size.y * chunk_size.z * sizeof(uint8_t));
     if (!voxelMap) {
         std::cout << "NOOOOOOO no room left :( youre computer is ded :(\n";
         exit(-1);
@@ -16,7 +16,7 @@ void Chunk::generateVoxelMap() {
                 int world_x = x + chunk_size.x * pos.x;
                 int world_y = y;
                 int world_z = z + chunk_size.z * pos.y;
-                voxelMap[index(x, y, z)] = 55 + 9 * (sin((world_x + world_z) * 0.2) * 0.5 + 0.5) > world_y;
+                voxelMap[index(x, y, z)] = 30 + 9 * (sin((world_x + world_z) * 0.2) * 0.5 + 0.5) > world_y;
             }
         }
     }
@@ -132,7 +132,7 @@ void Chunk::buildMesh() {
     mesh->initGPUGeometry(vp, vn, vuv, ti);
 }
 
-int Chunk::getBlock(int x, int y, int z) {
+uint8_t Chunk::getBlock(int x, int y, int z) {
     if (x < 0 || y < 0 || z < 0) return 0;
     if (x >= chunk_size.x || y >= chunk_size.y || z >= chunk_size.z) return 0;
 
