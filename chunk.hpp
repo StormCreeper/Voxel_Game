@@ -4,7 +4,7 @@
 #include "object3d.hpp"
 #include <iostream>
 
-const int chunk_size = 10;
+const glm::ivec3 chunk_size = {10, 64, 10};
 const float tex_num_x = 4;
 const float tex_num_y = 1;
 
@@ -14,7 +14,6 @@ enum DIR {
 
 class Chunk : public Object3D {
 public:
-    const static int CHUNK_SIZE = 16;
     Chunk() {
         std::cout << "Chunk creates" <<  std::endl;
     }
@@ -33,15 +32,15 @@ public:
 private:
 
     int index(int x, int y, int z) {
-        return x + y * chunk_size + z * chunk_size * chunk_size;
+        return x + y * chunk_size.x + z * chunk_size.x * chunk_size.y;
     }
 
     void generateVoxelMap() {
-        voxelMap = (int *) malloc(chunk_size*chunk_size*chunk_size*sizeof(int));
+        voxelMap = (int *) malloc(chunk_size.x*chunk_size.y*chunk_size.z*sizeof(int));
 
-        for(int x = 0; x<chunk_size; x++) {
-            for(int y = 0; y<chunk_size; y++) {
-                for(int z = 0; z<chunk_size; z++) {
+        for(int x = 0; x<chunk_size.x; x++) {
+            for(int y = 0; y<chunk_size.y; y++) {
+                for(int z = 0; z<chunk_size.z; z++) {
                     voxelMap[index(x, y, z)] = sin((x+z) * 0.5) * 5 + 5 < y;
                 }
             }
@@ -96,26 +95,26 @@ private:
             break;
         case DIR::FRONT:
             push_triangle({
-                push_vertex({ 1,  0,  0}, {0, 0, 1}, {1, 1}),
-                push_vertex({ 0,  0,  0}, {0, 0, 1}, {0, 1}),
-                push_vertex({ 1,  1,  0}, {0, 0, 1}, {1, 0})
+                push_vertex({ 0,  0,  1}, {0, 0, 1}, {0, 1}),
+                push_vertex({ 1,  0,  1}, {0, 0, 1}, {1, 1}),
+                push_vertex({ 1,  1,  1}, {0, 0, 1}, {1, 0})
             });
             push_triangle({
-                push_vertex({ 1,  1,  0}, {0, 0, 1}, {1, 0}),
-                push_vertex({ 0,  0,  0}, {0, 0, 1}, {0, 1}),
-                push_vertex({ 0,  1,  0}, {0, 0, 1}, {0, 0})
+                push_vertex({ 0,  0,  1}, {0, 0, 1}, {0, 1}),
+                push_vertex({ 1,  1,  1}, {0, 0, 1}, {1, 0}),
+                push_vertex({ 0,  1,  1}, {0, 0, 1}, {0, 0})
             });
             break;
         case DIR::BACK:
             push_triangle({
-                push_vertex({ 0,  0,  1}, {0, 0, -1}, {0, 1}),
-                push_vertex({ 1,  0,  1}, {0, 0, -1}, {1, 1}),
-                push_vertex({ 1,  1,  1}, {0, 0, -1}, {1, 0})
+                push_vertex({ 1,  0,  0}, {0, 0, -1}, {1, 1}),
+                push_vertex({ 0,  0,  0}, {0, 0, -1}, {0, 1}),
+                push_vertex({ 1,  1,  0}, {0, 0, -1}, {1, 0})
             });
             push_triangle({
-                push_vertex({ 0,  0,  1}, {0, 0, -1}, {0, 1}),
-                push_vertex({ 1,  1,  1}, {0, 0, -1}, {1, 0}),
-                push_vertex({ 0,  1,  1}, {0, 0, -1}, {0, 0})
+                push_vertex({ 1,  1,  0}, {0, 0, -1}, {1, 0}),
+                push_vertex({ 0,  0,  0}, {0, 0, -1}, {0, 1}),
+                push_vertex({ 0,  1,  0}, {0, 0, -1}, {0, 0})
             });
             break;
         case DIR::RIGHT:
@@ -147,7 +146,7 @@ private:
 
     int getBlock(int x, int y, int z) {
         if(x < 0 || y < 0 || z < 0) return 0;
-        if(x >= chunk_size || y >= chunk_size || z >= chunk_size) return 0;
+        if(x >= chunk_size.x || y >= chunk_size.y || z >= chunk_size.z) return 0;
 
         return voxelMap[index(x, y, z)];
     }
@@ -160,17 +159,17 @@ private:
 
         vert_index = 0;
         
-        for(int x = 0; x<chunk_size; x++) {
-            for(int y = 0; y<chunk_size; y++) {
-                for(int z = 0; z<chunk_size; z++) {
+        for(int x = 0; x<chunk_size.x; x++) {
+            for(int y = 0; y<chunk_size.y; y++) {
+                for(int z = 0; z<chunk_size.z; z++) {
                     world_offset = {x, y, z};
                     if(getBlock(x, y, z)) {
-                        /* if (!getBlock(x, y, z+1)) */ push_face(DIR::FRONT, 1);
-                        /* if (!getBlock(x, y, z-1)) */ push_face(DIR::BACK, 1);
-                        /* if (!getBlock(x, y-1, z)) */ push_face(DIR::DOWN, 0);
-                        /* if (!getBlock(x, y+1, z)) */ push_face(DIR::UP, 2);
-                        /* if (!getBlock(x+1, y, z)) */ push_face(DIR::LEFT, 1);
-                        /* if (!getBlock(x-1, y, z)) */ push_face(DIR::RIGHT, 1);
+                        if (!getBlock(x, y, z+1)) push_face(DIR::FRONT, 1);
+                        if (!getBlock(x, y, z-1)) push_face(DIR::BACK, 1);
+                        if (!getBlock(x, y-1, z)) push_face(DIR::DOWN, 0);
+                        if (!getBlock(x, y+1, z)) push_face(DIR::UP, 2);
+                        if (!getBlock(x+1, y, z)) push_face(DIR::LEFT, 1);
+                        if (!getBlock(x-1, y, z)) push_face(DIR::RIGHT, 1);
                     }
                 }
             }
