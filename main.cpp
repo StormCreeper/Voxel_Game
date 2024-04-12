@@ -3,7 +3,7 @@
 #include "shader.hpp"
 #include "object3d.hpp"
 #include "texture.hpp"
-#include "chunk.hpp"
+#include "chunk_manager.hpp"
 
 #include "gl_includes.hpp"
 
@@ -34,7 +34,7 @@ GLuint g_cubeMapProgram{};  // A GPU program for the cube map
 
 Camera g_camera{};
 
-Chunk g_chunk{};
+ChunkManager g_chunkManager{};
 
 // Executed each time the window is resized. Adjust the aspect ratio and the rendering viewport to the current window.
 void windowSizeCallback(GLFWwindow *window, int width, int height) {
@@ -226,7 +226,6 @@ void createCubeMap() {
 // Define your mesh(es) in the CPU memory
 void initCPUgeometry() {
     createCubeMap();
-    g_chunk.init();
 }
 
 void initCamera() {
@@ -298,7 +297,7 @@ void render() {
     setUniform(g_program, "u_texture", 0);
     setUniform(g_program, "u_objectColor", glm::vec3(1, 1, 1));
 
-    g_chunk.render(g_program);
+    g_chunkManager.renderAll(g_program);
 }
 
 // Update any accessible variable based on the current time
@@ -315,6 +314,9 @@ void update(const float currentTimeInSec) {
     cameraOffset = g_cameraDistance * rot1 * rot2 * cameraOffset;
 
     g_camera.setPosition(targetPosition + glm::vec3(cameraOffset));
+
+    g_chunkManager.updateQueue(glm::vec3(0));
+    g_chunkManager.generateOneChunk();
 }
 
 int main(int argc, char **argv) {

@@ -21,8 +21,9 @@ class Chunk : public Object3D {
     static const glm::ivec3 chunk_size;
 
    public:
-    Chunk() {
-        std::cout << "Chunk creates" << std::endl;
+    Chunk(glm::ivec2 pos) {
+        std::cout << "Chunk created at (" << pos.x << ", " << pos.y << ")" << std::endl;
+        this->pos = pos;
     }
 
     ~Chunk() {
@@ -64,6 +65,7 @@ class Chunk : public Object3D {
     glm::vec2 tex_size{1, 1};
 
     int vert_index{};
+    glm::ivec2 pos{};
 };
 
 #endif  // CHUNK_HPP
