@@ -5,13 +5,12 @@
     A Texture class, to load and bind textures, with proper deletion.
 */
 
-
 #ifndef TEXTURE_H
 #define TEXTURE_H
 #include <string>
 
 class Texture {
-public:
+   public:
     Texture() {}
     Texture(const std::string &filename) {
         load(filename);
@@ -22,8 +21,9 @@ public:
     void unbind() const;
 
     ~Texture();
-private:
+
+   private:
     GLuint m_textureID = 0;
 };
 
-#endif // TEXTURE_H
+#endif  // TEXTURE_H

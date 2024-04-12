@@ -16,6 +16,7 @@ set(SOURCES
   shader.cpp
   object3d.cpp
   texture.cpp
+  chunk.cpp
 
   camera.hpp
   mesh.hpp

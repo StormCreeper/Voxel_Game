@@ -8,7 +8,6 @@
 #include "object3d.hpp"
 #include "shader.hpp"
 
-
 void Object3D::render(GLuint program) const {
     // Set uniforms and bind texture
     setUniform(program, "u_modelMat", modelMatrix);

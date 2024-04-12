@@ -13,7 +13,7 @@
 
 #include <iostream>
 class Object3D {
-public:
+   public:
     Object3D() {
         std::cout << "Object created" << std::endl;
         mesh = std::make_shared<Mesh>();
@@ -33,11 +33,10 @@ public:
         return modelMatrix;
     }
 
-protected:
-    std::shared_ptr<Mesh> mesh {};
-    std::shared_ptr<Texture> texture {};
+   protected:
+    std::shared_ptr<Mesh> mesh{};
+    std::shared_ptr<Texture> texture{};
     glm::mat4 modelMatrix = glm::mat4(1.0f);
 };
 
-
-#endif // OBJECT_3D_H
+#endif  // OBJECT_3D_H

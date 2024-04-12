@@ -10,30 +10,28 @@
 
 #include <iostream>
 
-
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
 void Texture::load(const std::string& filename) {
-
-    if(m_textureID)
+    if (m_textureID)
         glDeleteTextures(1, &m_textureID);
 
     int width, height, numComponents;
     // Loading the image in CPU memory using stb_image
-    unsigned char *data = stbi_load(
+    unsigned char* data = stbi_load(
         filename.c_str(),
         &width, &height,
         &numComponents,  // 1 for a 8 bit grey-scale image, 3 for 24bits RGB image, 4 for 32bits RGBA image
         0);
 
-    if(!data) {
+    if (!data) {
         std::cout << "Could load file " << filename << "\n";
         exit(-1);
     }
 
-    glGenTextures(1, &m_textureID); // generate an OpenGL texture container
-    glBindTexture(GL_TEXTURE_2D, m_textureID); // activate the texture
+    glGenTextures(1, &m_textureID);             // generate an OpenGL texture container
+    glBindTexture(GL_TEXTURE_2D, m_textureID);  // activate the texture
     // Setup the texture filtering option and repeat mode; check www.opengl.org for details.
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -48,7 +46,7 @@ void Texture::load(const std::string& filename) {
 }
 
 void Texture::bind() const {
-    if(m_textureID)
+    if (m_textureID)
         glBindTexture(GL_TEXTURE_2D, m_textureID);
 }
 
@@ -57,6 +55,6 @@ void Texture::unbind() const {
 }
 
 Texture::~Texture() {
-    if(m_textureID)
+    if (m_textureID)
         glDeleteTextures(1, &m_textureID);
 }
