@@ -17,6 +17,7 @@ struct cmpChunkPos {
 
 class ChunkManager {
    public:
+   public:
     ChunkManager() {}
     void updateQueue(glm::vec3 worldPosition) {
         glm::ivec2 chunk_pos = glm::ivec2(worldPosition.x / Chunk::chunk_size.x, worldPosition.z / Chunk::chunk_size.z);
@@ -41,6 +42,11 @@ class ChunkManager {
         chunk->init();
 
         chunks.insert_or_assign(chunk_pos, chunk);
+    }
+
+    void reloadChunks() {
+        chunks.clear();
+        std::cout << "Cleared all chunks\n";
     }
 
     void renderAll(GLuint program) {

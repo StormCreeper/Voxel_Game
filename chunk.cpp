@@ -1,22 +1,21 @@
 #include "chunk.hpp"
+#include "world_builder.hpp"
 
 const glm::ivec3 Chunk::chunk_size = {10, 64, 10};
 std::shared_ptr<Texture> Chunk::chunk_texture{};
 
-void Chunk::generateVoxelMap() {
-    voxelMap = (uint8_t *)malloc(chunk_size.x * chunk_size.y * chunk_size.z * sizeof(uint8_t));
-    if (!voxelMap) {
-        std::cout << "NOOOOOOO no room left :( youre computer is ded :(\n";
-        exit(-1);
-    }
+void Chunk::voxel_map_from_noise() {
+    if (!allocated)
+        allocate();
 
     for (int x = 0; x < chunk_size.x; x++) {
         for (int y = 0; y < chunk_size.y; y++) {
             for (int z = 0; z < chunk_size.z; z++) {
-                int world_x = x + chunk_size.x * pos.x;
-                int world_y = y;
-                int world_z = z + chunk_size.z * pos.y;
-                voxelMap[index(x, y, z)] = 30 + 9 * (sin((world_x + world_z) * 0.2) * 0.5 + 0.5) > world_y;
+                glm::ivec3 world_pos{
+                    x + chunk_size.x * pos.x,
+                    y,
+                    z + chunk_size.z * pos.y};
+                voxelMap[index(x, y, z)] = WorldBuilder::generation_function(world_pos);
             }
         }
     }
@@ -127,12 +126,11 @@ void Chunk::buildMesh() {
         }
     }
 
-    std::cout << vp.size() << ", " << vn.size() << ", " << vuv.size() << ", " << ti.size() << "\n";
-
     mesh->initGPUGeometry(vp, vn, vuv, ti);
 }
 
 uint8_t Chunk::getBlock(int x, int y, int z) {
+    if (!allocated) return 0;
     if (x < 0 || y < 0 || z < 0) return 0;
     if (x >= chunk_size.x || y >= chunk_size.y || z >= chunk_size.z) return 0;
 

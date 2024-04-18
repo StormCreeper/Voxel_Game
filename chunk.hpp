@@ -33,12 +33,11 @@ class Chunk : public Object3D {
     }
 
     ~Chunk() {
-        if (voxelMap)
-            free(voxelMap);
+        free_mem();
     }
 
     void init() {
-        generateVoxelMap();
+        voxel_map_from_noise();
         buildMesh();
         this->texture = chunk_texture;
     }
@@ -50,12 +49,31 @@ class Chunk : public Object3D {
 
     void buildMesh();
 
+    void allocate() {
+        voxelMap = (uint8_t *)malloc(chunk_size.x * chunk_size.y * chunk_size.z * sizeof(uint8_t));
+        if (!voxelMap) {
+            std::cout << "NOOOOOOO no room left :( youre computer is ded :(\n";
+            exit(-1);
+        }
+
+        std::cout << "Allocated new chunk at (" << pos.x << ", " << pos.y << ")\n";
+        allocated = true;
+    }
+
+    void free_mem() {
+        if (voxelMap)
+            free(voxelMap);
+        std::cout << "Freed chunk at (" << pos.x << ", " << pos.y << ")\n";
+        allocated = false;
+    }
+
    private:
     inline int index(int x, int y, int z) const {
         return x + y * chunk_size.x + z * chunk_size.x * chunk_size.y;
     }
 
-    void generateVoxelMap();
+    void voxel_map_from_noise();
+
     int push_vertex(glm::vec3 pos, glm::vec3 norm, glm::vec2 uv);
 
     void push_triangle(glm::ivec3 tri);
@@ -79,6 +97,8 @@ class Chunk : public Object3D {
 
     int vert_index{};
     glm::ivec2 pos{};
+
+    bool allocated = false;
 };
 
 #endif  // CHUNK_HPP

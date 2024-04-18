@@ -17,6 +17,7 @@ set(SOURCES
   object3d.cpp
   texture.cpp
   chunk.cpp
+  world_builder.cpp
 
   camera.hpp
   mesh.hpp
@@ -26,6 +27,7 @@ set(SOURCES
   texture.hpp
   chunk.hpp
   chunk_manager.hpp
+  world_builder.hpp
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES})
