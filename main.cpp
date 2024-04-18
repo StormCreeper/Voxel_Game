@@ -49,6 +49,7 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
     static bool p_unpressed = false;
     static bool o_unpressed = false;
     static bool r_unpressed = false;
+    static bool t_unpressed = false;
     if (action == GLFW_PRESS) {
         if (key == GLFW_KEY_W) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -77,12 +78,18 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
 
             g_chunkManager.reloadChunks();
         }
+        if (key == GLFW_KEY_T && t_unpressed) {
+            t_unpressed = false;
+
+            g_chunkManager.saveChunks();
+        }
     }
     if (action == GLFW_RELEASE) {
         if (key == GLFW_KEY_LEFT_SHIFT) shiftPressed = false;
         if (key == GLFW_KEY_P) p_unpressed = true;
         if (key == GLFW_KEY_O) o_unpressed = true;
         if (key == GLFW_KEY_R) r_unpressed = true;
+        if (key == GLFW_KEY_T) t_unpressed = true;
     }
 }
 
@@ -339,7 +346,7 @@ void update(const float currentTimeInSec) {
     g_camera.setPosition(targetPosition + glm::vec3(cameraOffset));
 
     g_chunkManager.updateQueue(targetPosition + glm::vec3(cameraOffset));
-    g_chunkManager.generateOneChunk();
+    g_chunkManager.generateOrLoadOneChunk();
 }
 
 int main(int argc, char **argv) {

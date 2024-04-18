@@ -30,6 +30,7 @@ class Chunk : public Object3D {
         std::cout << "Chunk created at (" << pos.x << ", " << pos.y << ")" << std::endl;
         this->pos = pos;
         this->modelMatrix = glm::translate(modelMatrix, glm::vec3(pos.x * chunk_size.x, 0, pos.y * chunk_size.z));
+        this->texture = chunk_texture;
     }
 
     ~Chunk() {
@@ -38,16 +39,14 @@ class Chunk : public Object3D {
 
     void init() {
         voxel_map_from_noise();
-        buildMesh();
-        this->texture = chunk_texture;
+        build_mesh();
     }
 
     void init_no_generate() {
-        buildMesh();
-        this->texture = chunk_texture;
+        build_mesh();
     }
 
-    void buildMesh();
+    void build_mesh();
 
     void allocate() {
         voxelMap = (uint8_t *)malloc(chunk_size.x * chunk_size.y * chunk_size.z * sizeof(uint8_t));
@@ -66,13 +65,12 @@ class Chunk : public Object3D {
         std::cout << "Freed chunk at (" << pos.x << ", " << pos.y << ")\n";
         allocated = false;
     }
+    void voxel_map_from_noise();
 
    private:
     inline int index(int x, int y, int z) const {
         return x + y * chunk_size.x + z * chunk_size.x * chunk_size.y;
     }
-
-    void voxel_map_from_noise();
 
     int push_vertex(glm::vec3 pos, glm::vec3 norm, glm::vec2 uv);
 

@@ -17,8 +17,8 @@ struct cmpChunkPos {
 
 class ChunkManager {
    public:
-   public:
     ChunkManager() {}
+
     void updateQueue(glm::vec3 worldPosition) {
         glm::ivec2 chunk_pos = glm::ivec2(worldPosition.x / Chunk::chunk_size.x, worldPosition.z / Chunk::chunk_size.z);
         if (auto search = chunks.find(chunk_pos); search != chunks.end()) {
@@ -27,26 +27,37 @@ class ChunkManager {
         }
     }
 
-    void generateOneChunk() {
+    void generateOrLoadOneChunk() {
         if (taskQueue.empty()) return;
         glm::ivec2 chunk_pos = taskQueue.front();
         taskQueue.pop();
 
         if (auto search = chunks.find(chunk_pos); search != chunks.end()) return;  // Chunk has already been created for some reason
 
-        auto chunk = std::shared_ptr<Chunk>(new Chunk(chunk_pos));
-        if (!chunk) {
-            std::cout << "Noooooo chunk creation failed :(((((\n";
-            exit(-1);
-        }
-        chunk->init();
+        auto chunk = deserializeChunk(chunk_pos);
 
+        if (!chunk) {
+            chunk = std::shared_ptr<Chunk>(new Chunk(chunk_pos));
+            if (chunk) {
+                chunk->voxel_map_from_noise();
+            } else {
+                std::cout << "Noooooo chunk creation failed :(((((\n";
+                exit(-1);
+            }
+        }
+        chunk->build_mesh();
         chunks.insert_or_assign(chunk_pos, chunk);
     }
 
     void reloadChunks() {
         chunks.clear();
         std::cout << "Cleared all chunks\n";
+    }
+
+    void saveChunks() {
+        for (const auto& [pos, chunk] : chunks) {
+            serializeChunk(pos);
+        }
     }
 
     void renderAll(GLuint program) {
@@ -72,6 +83,8 @@ class ChunkManager {
         } else {
             myfile.write((const char*)chunks[chunk_pos]->voxelMap, Chunk::chunk_size.x * Chunk::chunk_size.y * Chunk::chunk_size.z * sizeof(char));
             myfile.close();
+
+            std::cout << "Wrote one chunk at (" << chunk_pos.x << ", " << chunk_pos.y << ")\n";
         }
     }
 
@@ -83,19 +96,17 @@ class ChunkManager {
         myfile.open(ss.str(), std::ios::binary);
 
         if (!myfile.is_open()) {
-            std::cerr << "Oh no !! Couldn't read chunk file :(\n";
+            std::cerr << "Chunk file doesn't exist :(\n";
             return nullptr;
         }
 
         size_t size = Chunk::chunk_size.x * Chunk::chunk_size.y * Chunk::chunk_size.z * sizeof(char);
 
         auto chunk = std::make_shared<Chunk>(chunk_pos);
-        chunk->voxelMap = (uint8_t*)malloc(Chunk::chunk_size.x * Chunk::chunk_size.y * Chunk::chunk_size.z * sizeof(uint8_t));
+        chunk->allocate();
         myfile.read((char*)chunk->voxelMap, size);
 
         myfile.close();
-
-        chunk->init_no_generate();
 
         std::cout << "Loaded chunk :D\n";
 

@@ -102,7 +102,7 @@ void Chunk::push_face(DIR dir, int texIndex) {
     }
 }
 
-void Chunk::buildMesh() {
+void Chunk::build_mesh() {
     vp.clear();
     vn.clear();
     vuv.clear();
