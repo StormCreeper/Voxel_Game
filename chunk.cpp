@@ -103,17 +103,35 @@ void Chunk::build_mesh() {
 
     vert_index = 0;
 
+    int bottom_tex = 0;
+    int side_tex = 1;
+    int top_tex = 2;
+
     for (int x = 0; x < chunk_size.x; x++) {
         for (int y = 0; y < chunk_size.y; y++) {
             for (int z = 0; z < chunk_size.z; z++) {
                 world_offset = {x, y, z};
-                if (getBlock(x, y, z)) {
-                    if (!getBlock(x, y, z + 1)) push_face(DIR::FRONT, 1);
-                    if (!getBlock(x, y, z - 1)) push_face(DIR::BACK, 1);
-                    if (!getBlock(x, y - 1, z)) push_face(DIR::DOWN, 0);
-                    if (!getBlock(x, y + 1, z)) push_face(DIR::UP, 2);
-                    if (!getBlock(x + 1, y, z)) push_face(DIR::LEFT, 1);
-                    if (!getBlock(x - 1, y, z)) push_face(DIR::RIGHT, 1);
+                if (current_block = getBlock(x, y, z)) {
+                    if (current_block == 1) {
+                        bottom_tex = 3;
+                        side_tex = 3;
+                        top_tex = 3;
+                    } else if (current_block == 2) {
+                        bottom_tex = 0;
+                        side_tex = 0;
+                        top_tex = 0;
+                    } else {
+                        bottom_tex = 0;
+                        side_tex = 1;
+                        top_tex = 2;
+                    }
+
+                    if (!getBlock(x, y, z + 1)) push_face(DIR::FRONT, side_tex);
+                    if (!getBlock(x, y, z - 1)) push_face(DIR::BACK, side_tex);
+                    if (!getBlock(x, y - 1, z)) push_face(DIR::DOWN, bottom_tex);
+                    if (!getBlock(x, y + 1, z)) push_face(DIR::UP, top_tex);
+                    if (!getBlock(x + 1, y, z)) push_face(DIR::LEFT, side_tex);
+                    if (!getBlock(x - 1, y, z)) push_face(DIR::RIGHT, side_tex);
                 }
             }
         }

@@ -123,7 +123,7 @@ class ChunkManager {
         glm::vec2 cam_dir = glm::normalize(glm::vec2(cam_target.x - cam_pos.x, cam_target.z - cam_pos.z));
 
         for (const auto& [pos, chunk] : chunks) {
-            if (isInFrustrum(pos, cam_pos, cam_dir, glm::radians(camera.get_fov())))
+            if (isInFrustrum(pos, cam_pos, cam_dir, glm::radians(180.f)))
                 chunk->render(program);
         }
     }

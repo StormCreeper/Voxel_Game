@@ -5,7 +5,7 @@
 
 class WorldBuilder {
    public:
-    static int generation_function(glm::ivec3 world_pos);
+    static uint8_t generation_function(glm::ivec3 world_pos);
 
    private:
 };

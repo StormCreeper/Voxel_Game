@@ -91,6 +91,8 @@ class Chunk : public Object3D {
 
     bool allocated = false;
     ChunkManager *chunk_manager;
+
+    int current_block = 0;
 };
 
 #endif  // CHUNK_HPP
