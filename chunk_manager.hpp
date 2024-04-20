@@ -20,19 +20,29 @@ class ChunkManager {
     ChunkManager() {}
 
     void updateQueue(glm::vec3 worldPosition) {
-        glm::ivec2 chunk_pos = glm::ivec2(worldPosition.x / Chunk::chunk_size.x, worldPosition.z / Chunk::chunk_size.z);
-        if (auto search = chunks.find(chunk_pos); search != chunks.end()) {
-        } else {
-            taskQueue.push(chunk_pos);
+        for (int i = -chunk_view_distance; i <= chunk_view_distance; i++) {
+            for (int j = -chunk_view_distance; j <= chunk_view_distance; j++) {
+                glm::ivec2 chunk_pos = glm::ivec2(i, j) + glm::ivec2((worldPosition.x - Chunk::chunk_size.x / 2) / Chunk::chunk_size.x, (worldPosition.z - Chunk::chunk_size.z / 2) / Chunk::chunk_size.z);
+
+                if (auto search = chunks.find(chunk_pos); search == chunks.end()) {
+                    taskQueue.push(chunk_pos);
+                }
+            }
         }
     }
 
     void generateOrLoadOneChunk() {
-        if (taskQueue.empty()) return;
-        glm::ivec2 chunk_pos = taskQueue.front();
-        taskQueue.pop();
+        glm::ivec2 chunk_pos{};
+        bool found_one = false;
 
-        if (auto search = chunks.find(chunk_pos); search != chunks.end()) return;  // Chunk has already been created for some reason
+        while (!found_one) {
+            if (taskQueue.empty()) return;
+
+            chunk_pos = taskQueue.front();
+            taskQueue.pop();
+
+            if (auto search = chunks.find(chunk_pos); search == chunks.end()) found_one = true;  // Chunk has already been created for some reason
+        }
 
         auto chunk = deserializeChunk(chunk_pos);
 
@@ -117,6 +127,7 @@ class ChunkManager {
 
    private:
     std::queue<glm::ivec2> taskQueue{};
+    int chunk_view_distance = 5;
 };
 
 #endif  // CHUNK_MANAGER_HPP

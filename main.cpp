@@ -37,21 +37,23 @@ Camera g_camera{};
 ChunkManager g_chunkManager{};
 
 // Executed each time the window is resized. Adjust the aspect ratio and the rendering viewport to the current window.
-void windowSizeCallback(GLFWwindow *window, int width, int height) {
-    g_camera.setAspectRatio(static_cast<float>(width) / static_cast<float>(height));
+void window_size_callback(GLFWwindow *window, int width, int height) {
+    g_camera.set_aspect_ratio(static_cast<float>(width) / static_cast<float>(height));
     glViewport(0, 0, (GLint)width, (GLint)height);  // Dimension of the rendering region in the window
 }
 
 bool shiftPressed = false;
 
 // Executed each time a key is entered.
-void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+    g_camera.update_input_keys(key, action);
+
     static bool p_unpressed = false;
     static bool o_unpressed = false;
     static bool r_unpressed = false;
     static bool t_unpressed = false;
     if (action == GLFW_PRESS) {
-        if (key == GLFW_KEY_W) {
+        if (key == GLFW_KEY_Z) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         }
         if (key == GLFW_KEY_F) {
@@ -100,7 +102,7 @@ float g_yaw = 0.0f;
 float g_pitch = 0.0f;
 
 // Scroll for zooming
-void scrollCallback(GLFWwindow *window, double xoffset, double yoffset) {
+void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
     if (shiftPressed) {
         g_cameraDistance -= yoffset * 0.1f;
         g_cameraDistance = std::max(g_cameraDistance, 0.1f);
@@ -115,12 +117,20 @@ void scrollCallback(GLFWwindow *window, double xoffset, double yoffset) {
     }
 }
 
-void errorCallback(int error, const char *desc) {
+void cursor_pos_callback(GLFWwindow *window, double xpos, double ypos) {
+    g_camera.update_input_mouse_pos(glm::vec2(xpos, ypos));
+}
+
+void mouse_button_callback(GLFWwindow *window, int button, int action, int mods) {
+    g_camera.update_input_mouse_button(button, action);
+}
+
+void error_callback(int error, const char *desc) {
     std::cout << "Error " << error << ": " << desc << std::endl;
 }
 
 void initGLFW() {
-    glfwSetErrorCallback(errorCallback);
+    glfwSetErrorCallback(error_callback);
 
     // Initialize GLFW, the library responsible for window management
     if (!glfwInit()) {
@@ -138,7 +148,7 @@ void initGLFW() {
     // Create the window
     g_window = glfwCreateWindow(
         1024, 768,
-        "Interactive 3D Applications (OpenGL) - Simple Solar System", nullptr, nullptr);
+        "Minecraft clone attemps #93180289301", nullptr, nullptr);
     if (!g_window) {
         std::cerr << "ERROR: Failed to open window" << std::endl;
         glfwTerminate();
@@ -147,9 +157,11 @@ void initGLFW() {
 
     // Load the OpenGL context in the GLFW window using GLAD OpenGL wrangler
     glfwMakeContextCurrent(g_window);
-    glfwSetWindowSizeCallback(g_window, windowSizeCallback);
-    glfwSetKeyCallback(g_window, keyCallback);
-    glfwSetScrollCallback(g_window, scrollCallback);
+    glfwSetWindowSizeCallback(g_window, window_size_callback);
+    glfwSetKeyCallback(g_window, key_callback);
+    glfwSetScrollCallback(g_window, scroll_callback);
+    glfwSetMouseButtonCallback(g_window, mouse_button_callback);
+    glfwSetCursorPosCallback(g_window, cursor_pos_callback);
 }
 
 void initOpenGL() {
@@ -261,13 +273,12 @@ void initCPUgeometry() {
 void initCamera() {
     int width, height;
     glfwGetWindowSize(g_window, &width, &height);
-    g_camera.setAspectRatio(static_cast<float>(width) / static_cast<float>(height));
+    g_camera.set_aspect_ratio(static_cast<float>(width) / static_cast<float>(height));
 
-    g_camera.setPosition(glm::vec3(0.0, 0.0, 3.0));
-    g_camera.setNear(0.1);
-    g_camera.setFar(500);
+    g_camera.set_near(0.1);
+    g_camera.set_far(500);
 
-    g_camera.setFoV(90);
+    g_camera.set_fov(90);
 }
 
 void init() {
@@ -293,8 +304,8 @@ void clear() {
 void render() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);  // Erase the color and z buffers.
 
-    const glm::mat4 viewMatrix = g_camera.computeViewMatrix();
-    const glm::mat4 projMatrix = g_camera.computeProjectionMatrix();
+    const glm::mat4 viewMatrix = g_camera.compute_view_matrix();
+    const glm::mat4 projMatrix = g_camera.compute_projection_matrix();
 
     // Render stars
     glDepthMask(GL_FALSE);
@@ -317,7 +328,7 @@ void render() {
     setUniform(g_program, "u_viewMat", viewMatrix);
     setUniform(g_program, "u_projMat", projMatrix);
 
-    setUniform(g_program, "u_cameraPosition", g_camera.getPosition());
+    setUniform(g_program, "u_cameraPosition", g_camera.get_position());
 
     setUniform(g_program, "u_sunColor", glm::vec3(1.0f, 1.0f, 0.0f));
     setUniform(g_program, "u_sunPosition", glm::vec3(5.0f, 25.0f, 4.0f));
@@ -332,20 +343,9 @@ void render() {
 
 // Update any accessible variable based on the current time
 void update(const float currentTimeInSec) {
-    glm::vec3 targetPosition = glm::vec3(5.0f, 60.0f, 5.0f);
-    g_camera.setTarget(targetPosition);
+    g_camera.update();
 
-    // glm::vec3 cameraOffset = glm::normalize(glm::vec3(cos(g_cameraAngleX), 0.3f, sin(g_cameraAngleX))) * (1.1f + g_cameraDistance);
-    glm::vec4 cameraOffset(0, 0, 1, 0);
-
-    glm::mat4 rot1 = glm::rotate(glm::mat4(1), g_yaw, glm::vec3(0, 1, 0));
-    glm::mat4 rot2 = glm::rotate(glm::mat4(1), g_pitch, glm::vec3(1, 0, 0));
-
-    cameraOffset = g_cameraDistance * rot1 * rot2 * cameraOffset;
-
-    g_camera.setPosition(targetPosition + glm::vec3(cameraOffset));
-
-    g_chunkManager.updateQueue(targetPosition + glm::vec3(cameraOffset));
+    g_chunkManager.updateQueue(g_camera.get_position());
     g_chunkManager.generateOrLoadOneChunk();
 }
 
