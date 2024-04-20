@@ -1,6 +1,8 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
+#include <iostream>
+
 // Basic camera model
 class Camera {
    public:
@@ -31,9 +33,9 @@ class Camera {
 
     /// @brief Update the camera's pitch and yaw based on mouse position
     /// @param mouse_pos the mouse position
-    void update_input_mouse_pos(glm::vec2 mouse_pos) {
+    void update_input_mouse_pos(glm::vec2 in_mouse_pos) {
         mouse_last_pos = mouse_pos;
-        mouse_pos = mouse_pos;
+        mouse_pos = in_mouse_pos;
         glm::vec2 mouse_delta_pos = mouse_pos - mouse_last_pos;
         if (mouse_pressed) {
             m_yaw -= mouse_delta_pos.x * 0.005f;

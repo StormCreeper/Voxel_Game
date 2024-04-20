@@ -4,14 +4,26 @@
 #include "chunk.hpp"
 #include <memory>
 #include <map>
-#include <queue>
+#include <deque>
+#include <algorithm>
 #include <fstream>
 #include <sstream>
 
 struct cmpChunkPos {
-    bool operator()(const glm::ivec2& a, const glm::ivec2& b) const {
+    inline bool operator()(const glm::ivec2& a, const glm::ivec2& b) const {
         if (a.x == b.x) return a.y < b.y;
         return a.x < b.x;
+    }
+};
+
+struct cmpChunkPosOrigin {
+    static inline glm::vec2 center{};
+
+    inline bool operator()(const glm::ivec2& a, const glm::ivec2& b) {
+        glm::vec2 diff_a = center - (glm::vec2(a) + glm::vec2(0.5, 0.5)) * glm::vec2(Chunk::chunk_size.x, Chunk::chunk_size.z);
+        glm::vec2 diff_b = center - (glm::vec2(b) + glm::vec2(0.5, 0.5)) * glm::vec2(Chunk::chunk_size.x, Chunk::chunk_size.z);
+
+        return glm::length(diff_a) < glm::length(diff_b);
     }
 };
 
@@ -20,15 +32,33 @@ class ChunkManager {
     ChunkManager() {}
 
     void updateQueue(glm::vec3 worldPosition) {
+        glm::vec2 center = glm::vec2(worldPosition.x, worldPosition.z);
+
+        glm::ivec2 candidate{};
+        float min_distance = -1;
+
         for (int i = -chunk_view_distance; i <= chunk_view_distance; i++) {
             for (int j = -chunk_view_distance; j <= chunk_view_distance; j++) {
                 glm::ivec2 chunk_pos = glm::ivec2(i, j) + glm::ivec2((worldPosition.x - Chunk::chunk_size.x / 2) / Chunk::chunk_size.x, (worldPosition.z - Chunk::chunk_size.z / 2) / Chunk::chunk_size.z);
 
-                if (auto search = chunks.find(chunk_pos); search == chunks.end()) {
-                    taskQueue.push(chunk_pos);
-                }
+                if (std::find(taskQueue.begin(), taskQueue.end(), chunk_pos) == taskQueue.end())
+                    if (chunks.find(chunk_pos) == chunks.end()) {
+                        /*glm::vec2 diff_a = center - (glm::vec2(chunk_pos) + glm::vec2(0.5, 0.5)) * glm::vec2(Chunk::chunk_size.x, Chunk::chunk_size.z);
+                        float dist = glm::length(diff_a);
+                        if (min_distance < 0 || dist < min_distance) {
+                            min_distance = dist;
+                            candidate = chunk_pos;
+                        }*/
+                        taskQueue.push_front(chunk_pos);
+                    }
             }
         }
+
+        /*if (min_distance >= 0)
+            taskQueue.push_front(candidate);*/
+
+        cmpChunkPosOrigin::center = center;
+        std::sort(taskQueue.begin(), taskQueue.end(), cmpChunkPosOrigin());
     }
 
     void generateOrLoadOneChunk() {
@@ -39,7 +69,7 @@ class ChunkManager {
             if (taskQueue.empty()) return;
 
             chunk_pos = taskQueue.front();
-            taskQueue.pop();
+            taskQueue.pop_front();
 
             if (auto search = chunks.find(chunk_pos); search == chunks.end()) found_one = true;  // Chunk has already been created for some reason
         }
@@ -126,8 +156,8 @@ class ChunkManager {
     std::map<glm::ivec2, std::shared_ptr<Chunk>, cmpChunkPos> chunks{};
 
    private:
-    std::queue<glm::ivec2> taskQueue{};
-    int chunk_view_distance = 5;
+    std::deque<glm::ivec2> taskQueue{};
+    int chunk_view_distance = 16;
 };
 
 #endif  // CHUNK_MANAGER_HPP
