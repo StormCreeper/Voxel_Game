@@ -1,5 +1,6 @@
 #include "chunk.hpp"
 #include "world_builder.hpp"
+#include "chunk_manager.hpp"
 
 const glm::ivec3 Chunk::chunk_size = {16, 64, 16};
 std::shared_ptr<Texture> Chunk::chunk_texture{};
@@ -121,10 +122,17 @@ void Chunk::build_mesh() {
     mesh->initGPUGeometry(vp, vn, vuv);
 }
 
-uint8_t Chunk::getBlock(int x, int y, int z) {
+uint8_t Chunk::getBlock(int x, int y, int z, bool rec) {
     if (!allocated) return 0;
-    if (x < 0 || y < 0 || z < 0) return 0;
-    if (x >= chunk_size.x || y >= chunk_size.y || z >= chunk_size.z) return 0;
+    if (x < 0 || y < 0 || z < 0 ||
+        x >= chunk_size.x || y >= chunk_size.y || z >= chunk_size.z) {
+        if (rec)
+            return chunk_manager->getBlock(glm::ivec3(
+                x + pos.x * chunk_size.x,
+                y,
+                z + pos.y * chunk_size.z));
+        return 0;
+    }
 
     return voxelMap[index(x, y, z)];
 }

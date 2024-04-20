@@ -63,13 +63,13 @@ class ChunkManager {
             chunk_pos = taskQueue.front();
             taskQueue.pop_front();
 
-            if (auto search = chunks.find(chunk_pos); search == chunks.end()) found_one = true;  // Chunk has already been created for some reason
+            if (chunks.find(chunk_pos) == chunks.end()) found_one = true;  // Chunk has already been created for some reason
         }
 
         auto chunk = deserializeChunk(chunk_pos);
 
         if (!chunk) {
-            chunk = std::shared_ptr<Chunk>(new Chunk(chunk_pos));
+            chunk = std::shared_ptr<Chunk>(new Chunk(chunk_pos, this));
             if (chunk) {
                 chunk->voxel_map_from_noise();
             } else {
@@ -84,6 +84,7 @@ class ChunkManager {
         regenerateOneChunkMesh(chunk_pos + glm::ivec2(-1, 0));
         regenerateOneChunkMesh(chunk_pos + glm::ivec2(0, 1));
         regenerateOneChunkMesh(chunk_pos + glm::ivec2(0, -1));
+        // TODO
     }
 
     void reloadChunks() {
@@ -139,7 +140,7 @@ class ChunkManager {
 
         size_t size = Chunk::chunk_size.x * Chunk::chunk_size.y * Chunk::chunk_size.z * sizeof(char);
 
-        auto chunk = std::make_shared<Chunk>(chunk_pos);
+        auto chunk = std::make_shared<Chunk>(chunk_pos, this);
         chunk->allocate();
         myfile.read((char*)chunk->voxelMap, size);
 
@@ -148,6 +149,22 @@ class ChunkManager {
         std::cout << "Loaded chunk :D\n";
 
         return chunk;
+    }
+
+    uint8_t getBlock(glm::ivec3 world_pos) {
+        glm::ivec2 chunk_pos = glm::ivec2(
+            floor(world_pos.x / (float)Chunk::chunk_size.x),
+            floor(world_pos.z / (float)Chunk::chunk_size.z));
+
+        glm::ivec2 chunk_coords = glm::ivec2(world_pos.x, world_pos.z) - chunk_pos * glm::ivec2(Chunk::chunk_size.x, Chunk::chunk_size.z);
+
+        if (chunk_coords.x < 0 || chunk_coords.x >= Chunk::chunk_size.x || chunk_coords.y < 0 || chunk_coords.y >= Chunk::chunk_size.z)
+            std::cout << "(" << chunk_pos.x << ", " << chunk_pos.y << ", " << chunk_coords.x << ", " << chunk_coords.y << ")\n";
+
+        if (auto search = chunks.find(chunk_pos); search != chunks.end()) {
+            return search->second->getBlock(chunk_coords.x, world_pos.y, chunk_coords.y, false);
+        } else
+            return 0;
     }
 
     std::map<glm::ivec2, std::shared_ptr<Chunk>, cmpChunkPos> chunks{};
