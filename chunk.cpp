@@ -1,7 +1,7 @@
 #include "chunk.hpp"
 #include "world_builder.hpp"
 
-const glm::ivec3 Chunk::chunk_size = {10, 64, 10};
+const glm::ivec3 Chunk::chunk_size = {16, 64, 16};
 std::shared_ptr<Texture> Chunk::chunk_texture{};
 
 void Chunk::voxel_map_from_noise() {
@@ -36,12 +36,6 @@ int Chunk::push_vertex(glm::vec3 pos, glm::vec3 norm, glm::vec2 uv) {
     return vert_index++;
 }
 
-void Chunk::push_triangle(glm::ivec3 tri) {
-    ti.push_back(tri.x);
-    ti.push_back(tri.y);
-    ti.push_back(tri.z);
-}
-
 void Chunk::push_face(DIR dir, int texIndex) {
     tex_offset.x = (float)(texIndex) / tex_num_x;
     tex_offset.y = 0;
@@ -49,56 +43,55 @@ void Chunk::push_face(DIR dir, int texIndex) {
     tex_size.y = 1.0;
 
     switch (dir) {
-        case DIR::UP:
-            push_triangle({push_vertex({1, 1, 0}, {0, 1, 0}, {1, 0}),
-                           push_vertex({0, 1, 0}, {0, 1, 0}, {0, 0}),
-                           push_vertex({1, 1, 1}, {0, 1, 0}, {1, 1})});
-            push_triangle({
-                push_vertex({1, 1, 1}, {0, 1, 0}, {1, 1}),
-                push_vertex({0, 1, 0}, {0, 1, 0}, {0, 0}),
-                push_vertex({0, 1, 1}, {0, 1, 0}, {0, 1}),
-            });
-            break;
-        case DIR::DOWN:
-            push_triangle({push_vertex({0, 0, 0}, {0, -1, 0}, {0, 0}),
-                           push_vertex({1, 0, 0}, {0, -1, 0}, {1, 0}),
-                           push_vertex({1, 0, 1}, {0, -1, 0}, {1, 1})});
-            push_triangle({push_vertex({0, 0, 0}, {0, -1, 0}, {0, 0}),
-                           push_vertex({1, 0, 1}, {0, -1, 0}, {1, 1}),
-                           push_vertex({0, 0, 1}, {0, -1, 0}, {0, 1})});
-            break;
-        case DIR::FRONT:
-            push_triangle({push_vertex({0, 0, 1}, {0, 0, 1}, {0, 1}),
-                           push_vertex({1, 0, 1}, {0, 0, 1}, {1, 1}),
-                           push_vertex({1, 1, 1}, {0, 0, 1}, {1, 0})});
-            push_triangle({push_vertex({0, 0, 1}, {0, 0, 1}, {0, 1}),
-                           push_vertex({1, 1, 1}, {0, 0, 1}, {1, 0}),
-                           push_vertex({0, 1, 1}, {0, 0, 1}, {0, 0})});
-            break;
-        case DIR::BACK:
-            push_triangle({push_vertex({1, 0, 0}, {0, 0, -1}, {1, 1}),
-                           push_vertex({0, 0, 0}, {0, 0, -1}, {0, 1}),
-                           push_vertex({1, 1, 0}, {0, 0, -1}, {1, 0})});
-            push_triangle({push_vertex({1, 1, 0}, {0, 0, -1}, {1, 0}),
-                           push_vertex({0, 0, 0}, {0, 0, -1}, {0, 1}),
-                           push_vertex({0, 1, 0}, {0, 0, -1}, {0, 0})});
-            break;
-        case DIR::RIGHT:
-            push_triangle({push_vertex({0, 1, 0}, {-1, 0, 0}, {0, 0}),
-                           push_vertex({0, 0, 0}, {-1, 0, 0}, {0, 1}),
-                           push_vertex({0, 1, 1}, {-1, 0, 0}, {1, 0})});
-            push_triangle({push_vertex({0, 1, 1}, {-1, 0, 0}, {1, 0}),
-                           push_vertex({0, 0, 0}, {-1, 0, 0}, {0, 1}),
-                           push_vertex({0, 0, 1}, {-1, 0, 0}, {1, 1})});
-            break;
-        case DIR::LEFT:
-            push_triangle({push_vertex({1, 0, 0}, {1, 0, 0}, {0, 1}),
-                           push_vertex({1, 1, 0}, {1, 0, 0}, {0, 0}),
-                           push_vertex({1, 1, 1}, {1, 0, 0}, {1, 0})});
-            push_triangle({push_vertex({1, 0, 0}, {1, 0, 0}, {0, 1}),
-                           push_vertex({1, 1, 1}, {1, 0, 0}, {1, 0}),
-                           push_vertex({1, 0, 1}, {1, 0, 0}, {1, 1})});
-            break;
+        case DIR::UP: {
+            push_vertex({1, 1, 0}, {0, 1, 0}, {1, 0});
+            push_vertex({0, 1, 0}, {0, 1, 0}, {0, 0});
+            push_vertex({1, 1, 1}, {0, 1, 0}, {1, 1});
+
+            push_vertex({1, 1, 1}, {0, 1, 0}, {1, 1});
+            push_vertex({0, 1, 0}, {0, 1, 0}, {0, 0});
+            push_vertex({0, 1, 1}, {0, 1, 0}, {0, 1});
+        } break;
+        case DIR::DOWN: {
+            push_vertex({0, 0, 0}, {0, -1, 0}, {0, 0});
+            push_vertex({1, 0, 0}, {0, -1, 0}, {1, 0});
+            push_vertex({1, 0, 1}, {0, -1, 0}, {1, 1});
+            push_vertex({0, 0, 0}, {0, -1, 0}, {0, 0});
+            push_vertex({1, 0, 1}, {0, -1, 0}, {1, 1});
+            push_vertex({0, 0, 1}, {0, -1, 0}, {0, 1});
+        } break;
+        case DIR::FRONT: {
+            push_vertex({0, 0, 1}, {0, 0, 1}, {0, 1});
+            push_vertex({1, 0, 1}, {0, 0, 1}, {1, 1});
+            push_vertex({1, 1, 1}, {0, 0, 1}, {1, 0});
+            push_vertex({0, 0, 1}, {0, 0, 1}, {0, 1});
+            push_vertex({1, 1, 1}, {0, 0, 1}, {1, 0});
+            push_vertex({0, 1, 1}, {0, 0, 1}, {0, 0});
+        } break;
+        case DIR::BACK: {
+            push_vertex({1, 0, 0}, {0, 0, -1}, {1, 1});
+            push_vertex({0, 0, 0}, {0, 0, -1}, {0, 1});
+            push_vertex({1, 1, 0}, {0, 0, -1}, {1, 0});
+            push_vertex({1, 1, 0}, {0, 0, -1}, {1, 0});
+            push_vertex({0, 0, 0}, {0, 0, -1}, {0, 1});
+            push_vertex({0, 1, 0}, {0, 0, -1}, {0, 0});
+        } break;
+        case DIR::RIGHT: {
+            push_vertex({0, 1, 0}, {-1, 0, 0}, {0, 0});
+            push_vertex({0, 0, 0}, {-1, 0, 0}, {0, 1});
+            push_vertex({0, 1, 1}, {-1, 0, 0}, {1, 0});
+            push_vertex({0, 1, 1}, {-1, 0, 0}, {1, 0});
+            push_vertex({0, 0, 0}, {-1, 0, 0}, {0, 1});
+            push_vertex({0, 0, 1}, {-1, 0, 0}, {1, 1});
+        } break;
+        case DIR::LEFT: {
+            push_vertex({1, 0, 0}, {1, 0, 0}, {0, 1});
+            push_vertex({1, 1, 0}, {1, 0, 0}, {0, 0});
+            push_vertex({1, 1, 1}, {1, 0, 0}, {1, 0});
+            push_vertex({1, 0, 0}, {1, 0, 0}, {0, 1});
+            push_vertex({1, 1, 1}, {1, 0, 0}, {1, 0});
+            push_vertex({1, 0, 1}, {1, 0, 0}, {1, 1});
+        } break;
     }
 }
 
@@ -106,7 +99,6 @@ void Chunk::build_mesh() {
     vp.clear();
     vn.clear();
     vuv.clear();
-    ti.clear();
 
     vert_index = 0;
 
@@ -126,7 +118,7 @@ void Chunk::build_mesh() {
         }
     }
 
-    mesh->initGPUGeometry(vp, vn, vuv, ti);
+    mesh->initGPUGeometry(vp, vn, vuv);
 }
 
 uint8_t Chunk::getBlock(int x, int y, int z) {

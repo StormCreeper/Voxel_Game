@@ -32,33 +32,25 @@ class ChunkManager {
     ChunkManager() {}
 
     void updateQueue(glm::vec3 worldPosition) {
-        glm::vec2 center = glm::vec2(worldPosition.x, worldPosition.z);
-
-        glm::ivec2 candidate{};
-        float min_distance = -1;
-
         for (int i = -chunk_view_distance; i <= chunk_view_distance; i++) {
             for (int j = -chunk_view_distance; j <= chunk_view_distance; j++) {
                 glm::ivec2 chunk_pos = glm::ivec2(i, j) + glm::ivec2((worldPosition.x - Chunk::chunk_size.x / 2) / Chunk::chunk_size.x, (worldPosition.z - Chunk::chunk_size.z / 2) / Chunk::chunk_size.z);
 
                 if (std::find(taskQueue.begin(), taskQueue.end(), chunk_pos) == taskQueue.end())
                     if (chunks.find(chunk_pos) == chunks.end()) {
-                        /*glm::vec2 diff_a = center - (glm::vec2(chunk_pos) + glm::vec2(0.5, 0.5)) * glm::vec2(Chunk::chunk_size.x, Chunk::chunk_size.z);
-                        float dist = glm::length(diff_a);
-                        if (min_distance < 0 || dist < min_distance) {
-                            min_distance = dist;
-                            candidate = chunk_pos;
-                        }*/
                         taskQueue.push_front(chunk_pos);
                     }
             }
         }
 
-        /*if (min_distance >= 0)
-            taskQueue.push_front(candidate);*/
-
-        cmpChunkPosOrigin::center = center;
+        cmpChunkPosOrigin::center = glm::vec2(worldPosition.x, worldPosition.z);
         std::sort(taskQueue.begin(), taskQueue.end(), cmpChunkPosOrigin());
+    }
+
+    void regenerateOneChunkMesh(glm::ivec2 chunk_pos) {
+        if (auto search = chunks.find(chunk_pos); search != chunks.end()) {
+            search->second->build_mesh();
+        }
     }
 
     void generateOrLoadOneChunk() {
@@ -87,6 +79,11 @@ class ChunkManager {
         }
         chunk->build_mesh();
         chunks.insert_or_assign(chunk_pos, chunk);
+
+        regenerateOneChunkMesh(chunk_pos + glm::ivec2(1, 0));
+        regenerateOneChunkMesh(chunk_pos + glm::ivec2(-1, 0));
+        regenerateOneChunkMesh(chunk_pos + glm::ivec2(0, 1));
+        regenerateOneChunkMesh(chunk_pos + glm::ivec2(0, -1));
     }
 
     void reloadChunks() {
@@ -157,7 +154,7 @@ class ChunkManager {
 
    private:
     std::deque<glm::ivec2> taskQueue{};
-    int chunk_view_distance = 16;
+    int chunk_view_distance = 5;
 };
 
 #endif  // CHUNK_MANAGER_HPP

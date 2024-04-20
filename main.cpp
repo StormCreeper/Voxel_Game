@@ -201,14 +201,47 @@ void createCubeMap() {
     std::vector<float> vertexPositions = {
         // front
         -1.0f, -1.0f, 1.0f,  // 0
+        1.0f, 1.0f, 1.0f,    // 2
         1.0f, -1.0f, 1.0f,   // 1
         1.0f, 1.0f, 1.0f,    // 2
+        -1.0f, -1.0f, 1.0f,  // 0
         -1.0f, 1.0f, 1.0f,   // 3
+        // right
+        1.0f, -1.0f, 1.0f,   // 1
+        1.0f, 1.0f, -1.0f,   // 6
+        1.0f, -1.0f, -1.0f,  // 5
+        1.0f, 1.0f, -1.0f,   // 6
+        1.0f, -1.0f, 1.0f,   // 1
+        1.0f, 1.0f, 1.0f,    // 2
         // back
-        -1.0f, -1.0f, -1.0f,  // 4
+        -1.0f, 1.0f, -1.0f,   // 7
         1.0f, -1.0f, -1.0f,   // 5
         1.0f, 1.0f, -1.0f,    // 6
+        1.0f, -1.0f, -1.0f,   // 5
         -1.0f, 1.0f, -1.0f,   // 7
+        -1.0f, -1.0f, -1.0f,  // 4
+        // left
+        -1.0f, -1.0f, -1.0f,  // 4
+        -1.0f, 1.0f, 1.0f,    // 3
+        -1.0f, -1.0f, 1.0f,   // 0
+        -1.0f, 1.0f, 1.0f,    // 3
+        -1.0f, -1.0f, -1.0f,  // 4
+        -1.0f, 1.0f, -1.0f,   // 7
+        // bottom
+        -1.0f, -1.0f, -1.0f,  // 4
+        1.0f, -1.0f, 1.0f,    // 1
+        1.0f, -1.0f, -1.0f,   // 5
+        1.0f, -1.0f, 1.0f,    // 1
+        -1.0f, -1.0f, -1.0f,  // 4
+        -1.0f, -1.0f, 1.0f,   // 0
+        // top
+        -1.0f, 1.0f, 1.0f,   // 3
+        1.0f, 1.0f, -1.0f,   // 6
+        1.0f, 1.0f, 1.0f,    // 2
+        1.0f, 1.0f, -1.0f,   // 6
+        -1.0f, 1.0f, 1.0f,   // 3
+        -1.0f, 1.0f, -1.0f,  // 7
+
     };
 
     std::vector<int> triangleIndices = {
@@ -261,7 +294,7 @@ void createCubeMap() {
     size_t numIndices = triangleIndices.size();
 
     g_starsCube = std::make_shared<Mesh>();
-    g_starsCube->setGPUGeometry(posVbo, 0, 0, ibo, vao, numIndices);
+    g_starsCube->setGPUGeometry(posVbo, 0, 0, vao, numIndices);
 }
 
 // Define your mesh(es) in the CPU memory

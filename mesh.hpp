@@ -16,22 +16,21 @@
 #include <vector>
 
 class Mesh {
-public:
-    void initGPUGeometry(const std::vector<float> &vertexPositions, const std::vector<float> &vertexNormals, const std::vector<float> &vertexUVs, const std::vector<unsigned int> &triangleIndices);
-    void setGPUGeometry(GLuint posVbo, GLuint normalVbo, GLuint uvVbo, GLuint ibo, GLuint vao, size_t numIndices);
+   public:
+    void genBuffers();
+    void initGPUGeometry(const std::vector<float> &vertexPositions, const std::vector<float> &vertexNormals, const std::vector<float> &vertexUVs);
+    void setGPUGeometry(GLuint posVbo, GLuint normalVbo, GLuint uvVbo, GLuint vao, size_t numIndices);
     void render() const;
 
     ~Mesh();
-    
-private:
+
+   private:
     GLuint m_vao = 0;
     GLuint m_posVbo = 0;
     GLuint m_normalVbo = 0;
     GLuint m_uvVbo = 0;
-    GLuint m_ibo = 0;
 
     size_t m_numIndices = 0;
 };
 
-
-#endif // MESH_H
+#endif  // MESH_H

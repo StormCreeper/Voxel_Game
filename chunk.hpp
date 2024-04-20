@@ -31,19 +31,12 @@ class Chunk : public Object3D {
         this->pos = pos;
         this->modelMatrix = glm::translate(modelMatrix, glm::vec3(pos.x * chunk_size.x, 0, pos.y * chunk_size.z));
         this->texture = chunk_texture;
+
+        mesh->genBuffers();
     }
 
     ~Chunk() {
         free_mem();
-    }
-
-    void init() {
-        voxel_map_from_noise();
-        build_mesh();
-    }
-
-    void init_no_generate() {
-        build_mesh();
     }
 
     void build_mesh();
@@ -74,8 +67,6 @@ class Chunk : public Object3D {
 
     int push_vertex(glm::vec3 pos, glm::vec3 norm, glm::vec2 uv);
 
-    void push_triangle(glm::ivec3 tri);
-
     void push_face(DIR dir, int texIndex);
 
     uint8_t getBlock(int x, int y, int z);
@@ -87,7 +78,6 @@ class Chunk : public Object3D {
     std::vector<float> vp{};
     std::vector<float> vn{};
     std::vector<float> vuv{};
-    std::vector<unsigned int> ti{};
 
     glm::vec3 world_offset{};
     glm::vec2 tex_offset{};

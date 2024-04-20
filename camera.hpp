@@ -65,12 +65,14 @@ class Camera {
         if (key == GLFW_KEY_D) right_pressed = action != GLFW_RELEASE;
         if (key == GLFW_KEY_SPACE) up_pressed = action != GLFW_RELEASE;
         if (key == GLFW_KEY_LEFT_CONTROL) down_pressed = action != GLFW_RELEASE;
+        if (key == GLFW_KEY_LEFT_SHIFT) speed_pressed = action != GLFW_RELEASE;
     }
 
     /// @brief Updates the camera position and target vector based on input and pitch and yaw
     void update() {
         // Adjust camera position based on input keys (WASD)
-        const float camera_speed = 0.5f;
+        float camera_speed = 0.5f;
+        if (speed_pressed) camera_speed *= 4.f;
         glm::vec3 front;
         glm::vec3 right;
         glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -133,6 +135,8 @@ class Camera {
     bool right_pressed{};
     bool up_pressed{};
     bool down_pressed{};
+
+    bool speed_pressed{};
 };
 
 #endif  // CAMERA_H
