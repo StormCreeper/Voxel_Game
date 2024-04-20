@@ -2,6 +2,8 @@
 #define CHUNK_MANAGER_HPP
 
 #include "chunk.hpp"
+#include "camera.hpp"
+
 #include <memory>
 #include <map>
 #include <deque>
@@ -98,14 +100,36 @@ class ChunkManager {
         }
     }
 
-    void renderAll(GLuint program) {
+    /// @brief 2D Frustum culling
+    bool isInFrustrum(glm::ivec2 chunk_pos, glm::vec3 cam_pos, glm::vec2 dir, float fov) {
+        glm::vec2 cam_right = glm::normalize(glm::vec2(dir.y, -dir.x));
+
+        glm::vec2 chunk_center = (glm::vec2(chunk_pos) + glm::vec2(0.5, 0.5)) * glm::vec2(Chunk::chunk_size.x, Chunk::chunk_size.z);
+        glm::vec2 chunk_center_front = chunk_center + dir * (float)(Chunk::chunk_size.x * sqrt(2));
+
+        glm::vec2 cam_center = glm::vec2(cam_pos.x, cam_pos.z);
+
+        glm::vec2 chunk_dir_front = chunk_center_front - cam_center;
+
+        float angle_front = atan2(dir.x * chunk_dir_front.y - dir.y * chunk_dir_front.x, dir.x * chunk_dir_front.x + dir.y * chunk_dir_front.y);
+
+        return abs(angle_front) < fov / 2.0f;  // || abs(angle_max) < fov / 2.0f || abs(angle_min + angle_max) / 2.0f < fov / 2.0f;
+    }
+
+    /// @todo project cam pos and dir to do 3D frustum culling using 2D
+    void renderAll(GLuint program, Camera& camera) {
+        glm::vec3 cam_pos = camera.get_position();
+        glm::vec3 cam_target = camera.get_target();
+        glm::vec2 cam_dir = glm::normalize(glm::vec2(cam_target.x - cam_pos.x, cam_target.z - cam_pos.z));
+
         for (const auto& [pos, chunk] : chunks) {
-            chunk->render(program);
+            if (isInFrustrum(pos, cam_pos, cam_dir, glm::radians(camera.get_fov())))
+                chunk->render(program);
         }
     }
 
     void serializeChunk(glm::ivec2 chunk_pos) {
-        if (auto search = chunks.find(chunk_pos); search == chunks.end()) {
+        if (chunks.find(chunk_pos) == chunks.end()) {
             std::cout << "Noooooo couldn't write an inexistant chunk to a file\n";
             return;
         }

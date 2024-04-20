@@ -371,7 +371,7 @@ void render() {
     setUniform(g_program, "u_texture", 0);
     setUniform(g_program, "u_objectColor", glm::vec3(1, 1, 1));
 
-    g_chunkManager.renderAll(g_program);
+    g_chunkManager.renderAll(g_program, g_camera);
 }
 
 // Update any accessible variable based on the current time
