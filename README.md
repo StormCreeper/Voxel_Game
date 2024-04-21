@@ -3,7 +3,7 @@ I always loved Minecraft, and the way it works fascinates me. To me, it is the g
 
 So naturally, I tried several times to do a minecraft clone to understand the inner workings of the game, my first tries were about the procedural generation, this one is about the back-end: mesh and chunk loading optimisations, block management and more.
 
-I'm trying to make the fastest, most reliable, and most extensible voxel chunk system, so I can then be able to build a game on top of it.
+I'm trying to make the fastest, most reliable, and most extensible voxel chunk system I can, so I can then be able to build a game on top of it.
 
 ## Features
 - Chunk system, with loading, unloading, serializing and support for procedural generation
