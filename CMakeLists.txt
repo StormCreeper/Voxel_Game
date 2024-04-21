@@ -27,6 +27,7 @@ set(SOURCES
   chunk_manager.hpp
   world_builder.hpp
   block_palette.hpp
+  debug.hpp
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES})
