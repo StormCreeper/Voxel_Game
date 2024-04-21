@@ -3,20 +3,12 @@
 
 #include "object3d.hpp"
 #include <iostream>
+#include "block_palette.hpp"
 
 class ChunkManager;
 
-const float tex_num_x = 4;
+const float tex_num_x = 8;
 const float tex_num_y = 1;
-
-enum DIR {
-    UP,
-    DOWN,
-    LEFT,
-    RIGHT,
-    FRONT,
-    BACK
-};
 
 class Chunk : public Object3D {
    public:
@@ -24,13 +16,13 @@ class Chunk : public Object3D {
     static std::shared_ptr<Texture> chunk_texture;
 
     static void init_chunks() {
-        chunk_texture = std::make_shared<Texture>("../resources/media/atlas.jpg");
+        chunk_texture = std::make_shared<Texture>("../resources/media/atlas.png");
+        BlockPalette::init_block_descs();
     }
 
    public:
     Chunk(glm::ivec2 pos, ChunkManager *chunk_manager) {
         this->chunk_manager = chunk_manager;
-        // std::cout << "Chunk created at (" << pos.x << ", " << pos.y << ")" << std::endl;
         this->pos = pos;
         this->modelMatrix = glm::translate(modelMatrix, glm::vec3(pos.x * chunk_size.x, 0, pos.y * chunk_size.z));
         this->texture = chunk_texture;
