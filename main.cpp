@@ -94,10 +94,6 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
     g_camera.update_input_mouse_button(button, action);
 }
 
-void error_callback(int error, const char *desc) {
-    std::cout << "Error " << error << ": " << desc << std::endl;
-}
-
 void initGLFW() {
     glfwSetErrorCallback(error_callback);
 
@@ -140,11 +136,11 @@ void initOpenGL() {
         std::exit(EXIT_FAILURE);
     }
 
-    glCullFace(GL_BACK);                   // Specifies the faces to cull (here the ones pointing away from the camera)
-    glEnable(GL_CULL_FACE);                // Enables face culling (based on the orientation defined by the CW/CCW enumeration).
-    glDepthFunc(GL_LESS);                  // Specify the depth test for the z-buffer
-    glEnable(GL_DEPTH_TEST);               // Enable the z-buffer test in the rasterization
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);  // specify the background color, used any time the framebuffer is cleared
+    glCullFace(GL_BACK);
+    glEnable(GL_CULL_FACE);
+    glDepthFunc(GL_LESS);
+    glEnable(GL_DEPTH_TEST);
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
@@ -152,19 +148,19 @@ void initOpenGL() {
     glDebugMessageControl(GL_DEBUG_SOURCE_API, GL_DEBUG_TYPE_ERROR, GL_DEBUG_SEVERITY_HIGH, 0, nullptr, GL_TRUE);
 }
 
-void initGPUprogram() {
+void initScene() {
+    g_cubeMap = std::make_shared<CubeMap>();
+    Chunk::init_chunks();
+
+    // Init shader
+
     g_program = glCreateProgram();
     loadShader(g_program, GL_VERTEX_SHADER, "../resources/vertexShader.glsl");
     loadShader(g_program, GL_FRAGMENT_SHADER, "../resources/fragmentShader.glsl");
     glLinkProgram(g_program);
-}
 
-void initCPUgeometry() {
-    g_cubeMap = std::make_shared<CubeMap>();
-    Chunk::init_chunks();
-}
+    // Init camera
 
-void initCamera() {
     int width, height;
     glfwGetWindowSize(g_window, &width, &height);
     g_camera.set_aspect_ratio(static_cast<float>(width) / static_cast<float>(height));
@@ -179,9 +175,7 @@ void init() {
     initGLFW();
     initOpenGL();
 
-    initCPUgeometry();
-    initGPUprogram();
-    initCamera();
+    initScene();
 }
 
 void clear() {

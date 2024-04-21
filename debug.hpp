@@ -3,6 +3,10 @@
 
 #include <iostream>
 
+void error_callback(int error, const char *desc) {
+    std::cout << "Error " << error << ": " << desc << std::endl;
+}
+
 void APIENTRY glDebugOutput(GLenum source,
                             GLenum type,
                             unsigned int id,
