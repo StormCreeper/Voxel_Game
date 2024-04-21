@@ -14,7 +14,6 @@ set(SOURCES
   main.cpp
   mesh.cpp
   shader.cpp
-  object3d.cpp
   texture.cpp
   chunk.cpp
   world_builder.cpp
@@ -23,7 +22,6 @@ set(SOURCES
   mesh.hpp
   shader.hpp
   gl_includes.hpp
-  object3d.hpp
   texture.hpp
   chunk.hpp
   chunk_manager.hpp

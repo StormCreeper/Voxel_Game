@@ -1,7 +1,7 @@
 #ifndef CHUNK_HPP
 #define CHUNK_HPP
 
-#include "object3d.hpp"
+#include "mesh.hpp"
 #include <iostream>
 #include "block_palette.hpp"
 
@@ -10,22 +10,21 @@ class ChunkManager;
 const float tex_num_x = 8;
 const float tex_num_y = 1;
 
-class Chunk : public Object3D {
+class Chunk {
    public:
     static const glm::ivec3 chunk_size;
     static std::shared_ptr<Texture> chunk_texture;
 
     static void init_chunks() {
-        chunk_texture = std::make_shared<Texture>("../resources/media/atlas.png");
         BlockPalette::init_block_descs();
     }
 
    public:
     Chunk(glm::ivec2 pos, ChunkManager *chunk_manager) {
+        mesh = std::make_shared<Mesh>();
         this->chunk_manager = chunk_manager;
         this->pos = pos;
         this->modelMatrix = glm::translate(modelMatrix, glm::vec3(pos.x * chunk_size.x, 0, pos.y * chunk_size.z));
-        this->texture = chunk_texture;
 
         mesh->genBuffers();
     }
@@ -57,6 +56,15 @@ class Chunk : public Object3D {
 
     uint8_t getBlock(int x, int y, int z, bool rec = true);
 
+    void render(GLuint program) const {
+        // Set uniforms and bind texture
+        setUniform(program, "u_modelMat", modelMatrix);
+
+        mesh->render();
+
+        setUniform(program, "u_modelMat", glm::mat4(1.0f));
+    }
+
    private:
     inline int index(int x, int y, int z) const {
         return x + y * chunk_size.x + z * chunk_size.x * chunk_size.y;
@@ -85,6 +93,9 @@ class Chunk : public Object3D {
     ChunkManager *chunk_manager;
 
     int current_block = 0;
+
+    std::shared_ptr<Mesh> mesh{};
+    glm::mat4 modelMatrix = glm::mat4(1.0f);
 };
 
 #endif  // CHUNK_HPP

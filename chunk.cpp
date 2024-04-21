@@ -1,6 +1,7 @@
 #include "chunk.hpp"
 #include "world_builder.hpp"
 #include "chunk_manager.hpp"
+#include <memory>
 
 const glm::ivec3 Chunk::chunk_size = {16, 64, 16};
 std::shared_ptr<Texture> Chunk::chunk_texture{};

@@ -1,7 +1,6 @@
 #include "mesh.hpp"
 #include "camera.hpp"
 #include "shader.hpp"
-#include "object3d.hpp"
 #include "texture.hpp"
 #include "chunk_manager.hpp"
 
@@ -95,28 +94,6 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
     }
 }
 
-float g_cameraDistance = 5.0f;
-float g_cameraAngleX = 0.0f;
-
-float g_yaw = 0.0f;
-float g_pitch = 0.0f;
-
-// Scroll for zooming
-void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
-    if (shiftPressed) {
-        g_cameraDistance -= yoffset * 0.1f;
-        g_cameraDistance = std::max(g_cameraDistance, 0.1f);
-    } else {
-        g_yaw += xoffset * 0.04f;
-        g_pitch += yoffset * 0.04f;
-
-        float max = glm::pi<float>() / 2 - 0.01f;
-
-        if (g_pitch > max) g_pitch = max;
-        if (g_pitch < -max) g_pitch = -max;
-    }
-}
-
 void cursor_pos_callback(GLFWwindow *window, double xpos, double ypos) {
     g_camera.update_input_mouse_pos(glm::vec2(xpos, ypos));
 }
@@ -159,7 +136,6 @@ void initGLFW() {
     glfwMakeContextCurrent(g_window);
     glfwSetWindowSizeCallback(g_window, window_size_callback);
     glfwSetKeyCallback(g_window, key_callback);
-    glfwSetScrollCallback(g_window, scroll_callback);
     glfwSetMouseButtonCallback(g_window, mouse_button_callback);
     glfwSetCursorPosCallback(g_window, cursor_pos_callback);
 }
