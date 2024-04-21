@@ -3,6 +3,7 @@
 #include "shader.hpp"
 #include "texture.hpp"
 #include "chunk_manager.hpp"
+#include "cube_map.hpp"
 
 #include "gl_includes.hpp"
 
@@ -20,16 +21,13 @@ void APIENTRY glDebugOutput(GLenum source,
                             const char *message,
                             const void *userParam);
 
-std::shared_ptr<Mesh> g_starsCube{};
-std::shared_ptr<Texture> g_starsTexture{};
+std::shared_ptr<CubeMap> g_cubeMap{};
 
 // Window parameters
 GLFWwindow *g_window{};
 
 // GPU objects
 GLuint g_program{};  // A GPU program contains at least a vertex shader and a fragment shader
-
-GLuint g_cubeMapProgram{};  // A GPU program for the cube map
 
 Camera g_camera{};
 
@@ -161,121 +159,14 @@ void initOpenGL() {
 }
 
 void initGPUprogram() {
-    g_program = glCreateProgram();  // Create a GPU program, i.e., two central shaders of the graphics pipeline
+    g_program = glCreateProgram();
     loadShader(g_program, GL_VERTEX_SHADER, "../resources/vertexShader.glsl");
     loadShader(g_program, GL_FRAGMENT_SHADER, "../resources/fragmentShader.glsl");
-    glLinkProgram(g_program);  // The main GPU program is ready to be handle streams of polygons
-
-    // Cube map program
-    g_cubeMapProgram = glCreateProgram();
-    loadShader(g_cubeMapProgram, GL_VERTEX_SHADER, "../resources/cubeMapVertexShader.glsl");
-    loadShader(g_cubeMapProgram, GL_FRAGMENT_SHADER, "../resources/cubeMapFragmentShader.glsl");
-    glLinkProgram(g_cubeMapProgram);
+    glLinkProgram(g_program);
 }
 
-void createCubeMap() {
-    std::vector<float> vertexPositions = {
-        // front
-        -1.0f, -1.0f, 1.0f,  // 0
-        1.0f, 1.0f, 1.0f,    // 2
-        1.0f, -1.0f, 1.0f,   // 1
-        1.0f, 1.0f, 1.0f,    // 2
-        -1.0f, -1.0f, 1.0f,  // 0
-        -1.0f, 1.0f, 1.0f,   // 3
-        // right
-        1.0f, -1.0f, 1.0f,   // 1
-        1.0f, 1.0f, -1.0f,   // 6
-        1.0f, -1.0f, -1.0f,  // 5
-        1.0f, 1.0f, -1.0f,   // 6
-        1.0f, -1.0f, 1.0f,   // 1
-        1.0f, 1.0f, 1.0f,    // 2
-        // back
-        -1.0f, 1.0f, -1.0f,   // 7
-        1.0f, -1.0f, -1.0f,   // 5
-        1.0f, 1.0f, -1.0f,    // 6
-        1.0f, -1.0f, -1.0f,   // 5
-        -1.0f, 1.0f, -1.0f,   // 7
-        -1.0f, -1.0f, -1.0f,  // 4
-        // left
-        -1.0f, -1.0f, -1.0f,  // 4
-        -1.0f, 1.0f, 1.0f,    // 3
-        -1.0f, -1.0f, 1.0f,   // 0
-        -1.0f, 1.0f, 1.0f,    // 3
-        -1.0f, -1.0f, -1.0f,  // 4
-        -1.0f, 1.0f, -1.0f,   // 7
-        // bottom
-        -1.0f, -1.0f, -1.0f,  // 4
-        1.0f, -1.0f, 1.0f,    // 1
-        1.0f, -1.0f, -1.0f,   // 5
-        1.0f, -1.0f, 1.0f,    // 1
-        -1.0f, -1.0f, -1.0f,  // 4
-        -1.0f, -1.0f, 1.0f,   // 0
-        // top
-        -1.0f, 1.0f, 1.0f,   // 3
-        1.0f, 1.0f, -1.0f,   // 6
-        1.0f, 1.0f, 1.0f,    // 2
-        1.0f, 1.0f, -1.0f,   // 6
-        -1.0f, 1.0f, 1.0f,   // 3
-        -1.0f, 1.0f, -1.0f,  // 7
-
-    };
-
-    std::vector<int> triangleIndices = {
-        // front
-        0, 2, 1,
-        2, 0, 3,
-        // right
-        1, 6, 5,
-        6, 1, 2,
-        // back
-        7, 5, 6,
-        5, 7, 4,
-        // left
-        4, 3, 0,
-        3, 4, 7,
-        // bottom
-        4, 1, 5,
-        1, 4, 0,
-        // top
-        3, 6, 2,
-        6, 3, 7};
-
-    GLuint vao;
-    GLuint posVbo, ibo;
-
-    // Create a single handle, vertex array object that contains attributes,
-    // vertex buffer objects (e.g., vertex's position, normal, and color)
-    glGenVertexArrays(1, &vao);  // If your system doesn't support OpenGL 4.5, you should use this instead of glCreateVertexArrays.
-
-    glBindVertexArray(vao);
-
-    // Generate a GPU buffer to store the positions of the vertices
-    size_t vertexBufferSize = sizeof(float) * vertexPositions.size();  // Gather the size of the buffer from the CPU-side vector
-
-    glGenBuffers(1, &posVbo);
-    glBindBuffer(GL_ARRAY_BUFFER, posVbo);
-    glBufferData(GL_ARRAY_BUFFER, vertexBufferSize, vertexPositions.data(), GL_DYNAMIC_READ);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
-    glEnableVertexAttribArray(0);
-
-    // Same for an index buffer object that stores the list of indices of the
-    // triangles forming the mesh
-    size_t indexBufferSize = sizeof(unsigned int) * triangleIndices.size();
-    glGenBuffers(1, &ibo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexBufferSize, triangleIndices.data(), GL_DYNAMIC_READ);
-
-    glBindVertexArray(0);  // deactivate the VAO for now, will be activated again when rendering
-
-    size_t numIndices = triangleIndices.size();
-
-    g_starsCube = std::make_shared<Mesh>();
-    g_starsCube->setGPUGeometry(posVbo, 0, 0, vao, numIndices);
-}
-
-// Define your mesh(es) in the CPU memory
 void initCPUgeometry() {
-    createCubeMap();
+    g_cubeMap = std::make_shared<CubeMap>();
     Chunk::init_chunks();
 }
 
@@ -294,8 +185,6 @@ void init() {
     initGLFW();
     initOpenGL();
 
-    g_starsTexture = std::make_shared<Texture>("../resources/media/stars.jpg");
-
     initCPUgeometry();
     initGPUprogram();
     initCamera();
@@ -303,7 +192,6 @@ void init() {
 
 void clear() {
     glDeleteProgram(g_program);
-    glDeleteProgram(g_cubeMapProgram);
 
     glfwDestroyWindow(g_window);
     glfwTerminate();
@@ -317,20 +205,9 @@ void render() {
     const glm::mat4 projMatrix = g_camera.compute_projection_matrix();
 
     // Render stars
-    glDepthMask(GL_FALSE);
-    glUseProgram(g_cubeMapProgram);
+    g_cubeMap->render(projMatrix, viewMatrix);
 
-    setUniform(g_cubeMapProgram, "u_viewMat", glm::mat4(glm::mat3(viewMatrix)));
-    setUniform(g_cubeMapProgram, "u_projMat", projMatrix);
-
-    setUniform(g_cubeMapProgram, "u_texture", 0);
-
-    glActiveTexture(GL_TEXTURE0);
-    g_starsTexture->bind();
-
-    g_starsCube->render();
-
-    glDepthMask(GL_TRUE);
+    // Render the rest
 
     glUseProgram(g_program);
 
