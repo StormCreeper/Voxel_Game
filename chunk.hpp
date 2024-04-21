@@ -43,7 +43,7 @@ class Chunk : public Object3D {
             exit(-1);
         }
 
-        std::cout << "Allocated new chunk at (" << pos.x << ", " << pos.y << ")\n";
+        // std::cout << "Allocated new chunk at (" << pos.x << ", " << pos.y << ")\n";
         allocated = true;
     }
 

@@ -34,9 +34,11 @@ class ChunkManager {
     ChunkManager() {}
 
     void updateQueue(glm::vec3 worldPosition) {
-        for (int i = -chunk_view_distance; i <= chunk_view_distance; i++) {
-            for (int j = -chunk_view_distance; j <= chunk_view_distance; j++) {
+        for (int i = -chunk_load_distance; i <= chunk_load_distance; i++) {
+            for (int j = -chunk_load_distance; j <= chunk_load_distance; j++) {
                 glm::ivec2 chunk_pos = glm::ivec2(i, j) + glm::ivec2((worldPosition.x - Chunk::chunk_size.x / 2) / Chunk::chunk_size.x, (worldPosition.z - Chunk::chunk_size.z / 2) / Chunk::chunk_size.z);
+                float dist = glm::length(glm::vec2(worldPosition.x, worldPosition.z) - (glm::vec2(chunk_pos) + glm::vec2(0.5, 0.5)) * glm::vec2(Chunk::chunk_size.x, Chunk::chunk_size.z));
+                if (dist >= chunk_load_distance * Chunk::chunk_size.x) continue;
 
                 if (std::find(taskQueue.begin(), taskQueue.end(), chunk_pos) == taskQueue.end())
                     if (chunks.find(chunk_pos) == chunks.end()) {
@@ -49,13 +51,27 @@ class ChunkManager {
         std::sort(taskQueue.begin(), taskQueue.end(), cmpChunkPosOrigin());
     }
 
+    void unloadUselessChunks(glm::vec3 cam_pos) {
+        auto it = chunks.begin();
+        while (it != chunks.end()) {
+            glm::ivec2 chunk_pos = it->first;
+            float dist = glm::length(glm::vec2(cam_pos.x, cam_pos.z) - (glm::vec2(chunk_pos) + glm::vec2(0.5, 0.5)) * glm::vec2(Chunk::chunk_size.x, Chunk::chunk_size.z));
+            if (dist >= chunk_unload_distance * Chunk::chunk_size.x) {
+                auto tmp_it = it;
+                ++it;
+                chunks.erase(tmp_it);
+            } else
+                ++it;
+        }
+    }
+
     void regenerateOneChunkMesh(glm::ivec2 chunk_pos) {
         if (auto search = chunks.find(chunk_pos); search != chunks.end()) {
             search->second->build_mesh();
         }
     }
 
-    void generateOrLoadOneChunk() {
+    void generateOrLoadOneChunk(glm::vec3 cam_pos) {
         glm::ivec2 chunk_pos{};
         bool found_one = false;
 
@@ -65,7 +81,10 @@ class ChunkManager {
             chunk_pos = taskQueue.front();
             taskQueue.pop_front();
 
-            if (chunks.find(chunk_pos) == chunks.end()) found_one = true;  // Chunk has already been created for some reason
+            float dist = glm::length(glm::vec2(cam_pos.x, cam_pos.z) - (glm::vec2(chunk_pos) + glm::vec2(0.5, 0.5)) * glm::vec2(Chunk::chunk_size.x, Chunk::chunk_size.z));
+            if (dist >= chunk_unload_distance * Chunk::chunk_size.x) continue;
+
+            if (chunks.find(chunk_pos) == chunks.end()) found_one = true;
         }
 
         auto chunk = deserializeChunk(chunk_pos);
@@ -102,6 +121,8 @@ class ChunkManager {
 
     /// @brief 2D Frustum culling
     bool isInFrustrum(glm::ivec2 chunk_pos, glm::vec3 cam_pos, glm::vec2 dir, float fov) {
+        float dist = glm::length(glm::vec2(cam_pos.x, cam_pos.z) - (glm::vec2(chunk_pos) + glm::vec2(0.5, 0.5)) * glm::vec2(Chunk::chunk_size.x, Chunk::chunk_size.z));
+        if (dist >= chunk_view_distance * Chunk::chunk_size.x) return false;
         glm::vec2 cam_right = glm::normalize(glm::vec2(dir.y, -dir.x));
 
         glm::vec2 chunk_center = (glm::vec2(chunk_pos) + glm::vec2(0.5, 0.5)) * glm::vec2(Chunk::chunk_size.x, Chunk::chunk_size.z);
@@ -158,7 +179,7 @@ class ChunkManager {
         myfile.open(ss.str(), std::ios::binary);
 
         if (!myfile.is_open()) {
-            std::cerr << "Chunk file doesn't exist :(\n";
+            // std::cerr << "Chunk file doesn't exist :(\n";
             return nullptr;
         }
 
@@ -170,7 +191,7 @@ class ChunkManager {
 
         myfile.close();
 
-        std::cout << "Loaded chunk :D\n";
+        // std::cout << "Loaded chunk :D\n";
 
         return chunk;
     }
@@ -196,6 +217,8 @@ class ChunkManager {
    private:
     std::deque<glm::ivec2> taskQueue{};
     int chunk_view_distance = 5;
+    int chunk_load_distance = 7;
+    int chunk_unload_distance = 10;
 };
 
 #endif  // CHUNK_MANAGER_HPP

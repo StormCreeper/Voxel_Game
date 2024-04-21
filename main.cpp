@@ -378,8 +378,12 @@ void render() {
 void update(const float currentTimeInSec) {
     g_camera.update();
 
-    g_chunkManager.updateQueue(g_camera.get_position());
-    g_chunkManager.generateOrLoadOneChunk();
+    glm::vec3 cam_pos = g_camera.get_position();
+
+    g_chunkManager.updateQueue(cam_pos);
+    g_chunkManager.generateOrLoadOneChunk(cam_pos);
+
+    g_chunkManager.unloadUselessChunks(cam_pos);
 }
 
 int main(int argc, char **argv) {
