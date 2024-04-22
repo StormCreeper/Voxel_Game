@@ -59,6 +59,9 @@ class ChunkManager {
             if (dist >= chunk_unload_distance * Chunk::chunk_size.x) {
                 auto tmp_it = it;
                 ++it;
+                if (tmp_it->second->hasBeenModified) {
+                    serializeChunk(tmp_it->first);
+                }
                 chunks.erase(tmp_it);
             } else
                 ++it;
@@ -236,9 +239,7 @@ class ChunkManager {
         }
     }
 
-    bool raycast(glm::vec3 origin, glm::vec3 direction, int nSteps, glm::ivec3& block_pos) {
-        glm::vec3 normal{};
-
+    bool raycast(glm::vec3 origin, glm::vec3 direction, int nSteps, glm::ivec3& block_pos, glm::ivec3& normal) {
         block_pos.x = int(floor(origin.x));
         block_pos.y = int(floor(origin.y));
         block_pos.z = int(floor(origin.z));
@@ -299,17 +300,17 @@ class ChunkManager {
             }
 
             uint8_t block = getBlock(block_pos);
-            std::cout << "pos: (" << block_pos.x << ", " << block_pos.y << ", " << block_pos.z << "), block: " << (int)block << "\n";
+            // std::cout << "pos: (" << block_pos.x << ", " << block_pos.y << ", " << block_pos.z << "), block: " << (int)block << "\n";
             if (block != 0) {
                 if (side == 0) {
                     perpWallDist = (block_pos.x - origin.x + (1 - stepX * step) / 2) / direction.x;
-                    normal = glm::vec3(1, 0, 0) * -float(stepX);
+                    normal = glm::ivec3(1, 0, 0) * -stepX;
                 } else if (side == 1) {
                     perpWallDist = (block_pos.y - origin.y + (1 - stepY * step) / 2) / direction.y;
-                    normal = glm::vec3(0, 1, 0) * -float(stepY);
+                    normal = glm::ivec3(0, 1, 0) * -stepY;
                 } else {
                     perpWallDist = (block_pos.z - origin.z + (1 - stepZ * step) / 2) / direction.z;
-                    normal = glm::vec3(0, 0, 1) * -float(stepZ);
+                    normal = glm::ivec3(0, 0, 1) * -stepZ;
                 }
 
                 break;

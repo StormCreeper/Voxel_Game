@@ -77,6 +77,7 @@ class Chunk {
 
    public:
     uint8_t *voxelMap{};
+    bool hasBeenModified = false;
 
    private:
     std::vector<float> vp{};

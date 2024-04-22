@@ -31,6 +31,8 @@ ChunkManager g_chunkManager{};
 void window_size_callback(GLFWwindow *window, int width, int height) {
     g_camera.set_aspect_ratio(static_cast<float>(width) / static_cast<float>(height));
     glViewport(0, 0, (GLint)width, (GLint)height);  // Dimension of the rendering region in the window
+
+    g_camera.set_screen_center(glm::vec2(width / 2, height / 2));
 }
 
 bool shiftPressed = false;
@@ -87,7 +89,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 }
 
 void cursor_pos_callback(GLFWwindow *window, double xpos, double ypos) {
-    g_camera.update_input_mouse_pos(glm::vec2(xpos, ypos));
+    g_camera.update_input_mouse_pos(window, glm::vec2(xpos, ypos));
 }
 
 void mouse_button_callback(GLFWwindow *window, int button, int action, int mods) {
@@ -95,9 +97,10 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
 
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
         glm::ivec3 block_pos{};
+        glm::ivec3 normal{};
         glm::vec3 dir = glm::normalize(g_camera.get_target() - g_camera.get_position());
 
-        if (g_chunkManager.raycast(g_camera.get_position(), dir, 15, block_pos)) {
+        if (g_chunkManager.raycast(g_camera.get_position(), dir, 15, block_pos, normal)) {
             std::cout << "Set block !! at {" << block_pos.x << ", " << block_pos.y << ", " << block_pos.z << "} ? :(\n";
             g_chunkManager.setBlock(block_pos, 0, true);
         } else {
@@ -181,6 +184,8 @@ void initScene() {
     g_camera.set_far(500);
 
     g_camera.set_fov(90);
+
+    g_camera.set_screen_center(glm::vec2(1024 / 2, 768 / 2));
 }
 
 void init() {

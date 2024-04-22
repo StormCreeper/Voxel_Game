@@ -18,6 +18,8 @@ class Camera {
     inline glm::vec3 get_position() { return m_pos; }
     inline void set_target(const glm::vec3 &t) { m_target = t; }
     inline glm::vec3 get_target() { return m_target; }
+    inline void set_screen_center(const glm::vec2 &p) { screen_center = p; }
+    inline glm::vec2 get_screen_center() { return screen_center; }
 
     /// @brief Compute the camera's view matrix based on internal parameters
     /// @return a view matrix
@@ -33,11 +35,14 @@ class Camera {
 
     /// @brief Update the camera's pitch and yaw based on mouse position
     /// @param mouse_pos the mouse position
-    void update_input_mouse_pos(glm::vec2 in_mouse_pos) {
+    void update_input_mouse_pos(GLFWwindow *window, glm::vec2 in_mouse_pos) {
         mouse_last_pos = mouse_pos;
         mouse_pos = in_mouse_pos;
-        glm::vec2 mouse_delta_pos = mouse_pos - mouse_last_pos;
-        if (mouse_pressed) {
+        glm::vec2 mouse_delta_pos = mouse_pos - screen_center;
+
+        glfwSetCursorPos(window, screen_center.x, screen_center.y);
+
+        if (true || mouse_pressed) {
             m_yaw -= mouse_delta_pos.x * 0.005f;
             m_pitch += mouse_delta_pos.y * 0.005f;
 
@@ -127,6 +132,7 @@ class Camera {
     bool mouse_pressed = false;
     glm::vec2 mouse_last_pos{};
     glm::vec2 mouse_pos{};
+    glm::vec2 screen_center{};
 
     // Keys
     bool front_pressed{};

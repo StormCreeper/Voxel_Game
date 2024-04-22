@@ -147,5 +147,7 @@ void Chunk::setBlock(int x, int y, int z, uint8_t block) {
         return;
     }
 
+    hasBeenModified = true;
+
     voxelMap[index(x, y, z)] = block;
 }
