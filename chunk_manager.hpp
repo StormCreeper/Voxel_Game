@@ -32,6 +32,9 @@ struct cmpChunkPosOrigin {
 class ChunkManager {
    public:
     ChunkManager() {}
+    ~ChunkManager() {
+        saveChunks();
+    }
 
     void updateQueue(glm::vec3 worldPosition) {
         for (int i = -chunk_load_distance; i <= chunk_load_distance; i++) {
@@ -118,7 +121,8 @@ class ChunkManager {
 
     void saveChunks() {
         for (const auto& [pos, chunk] : chunks) {
-            serializeChunk(pos);
+            if (chunk->hasBeenModified)
+                serializeChunk(pos);
         }
     }
 
