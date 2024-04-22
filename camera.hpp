@@ -36,6 +36,7 @@ class Camera {
     /// @brief Update the camera's pitch and yaw based on mouse position
     /// @param mouse_pos the mouse position
     void update_input_mouse_pos(GLFWwindow *window, glm::vec2 in_mouse_pos) {
+        if (!mouse_locked) return;
         mouse_last_pos = mouse_pos;
         mouse_pos = in_mouse_pos;
         glm::vec2 mouse_delta_pos = mouse_pos - screen_center;
@@ -57,9 +58,13 @@ class Camera {
     /// @param button button gave by glfw callback
     /// @param action action gave by glfw callback
     void update_input_mouse_button(int button, int action) {
-        if (button == GLFW_MOUSE_BUTTON_RIGHT) {
-            if (action == GLFW_PRESS) mouse_pressed = true;
-            if (action == GLFW_RELEASE) mouse_pressed = false;
+        if (mouse_locked) {
+            if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+                if (action == GLFW_PRESS) mouse_pressed = true;
+                if (action == GLFW_RELEASE) mouse_pressed = false;
+            }
+        } else {
+            if (action == GLFW_PRESS) mouse_locked = true;
         }
     }
     /// @brief Update the keypress states for wasd, space and left ctrl
@@ -71,6 +76,10 @@ class Camera {
         if (key == GLFW_KEY_SPACE) up_pressed = action != GLFW_RELEASE;
         if (key == GLFW_KEY_LEFT_CONTROL) down_pressed = action != GLFW_RELEASE;
         if (key == GLFW_KEY_LEFT_SHIFT) speed_pressed = action != GLFW_RELEASE;
+
+        if (mouse_locked && key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+            mouse_locked = false;
+        }
     }
 
     /// @brief Updates the camera position and target vector based on input and pitch and yaw
@@ -143,6 +152,8 @@ class Camera {
     bool down_pressed{};
 
     bool speed_pressed{};
+
+    bool mouse_locked = false;
 };
 
 #endif  // CAMERA_H

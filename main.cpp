@@ -52,7 +52,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         if (key == GLFW_KEY_F) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
-        if ((key == GLFW_KEY_ESCAPE || key == GLFW_KEY_Q)) {
+        if ((key == GLFW_KEY_Q)) {
             glfwSetWindowShouldClose(window, true);  // Closes the application if the escape key is pressed
         }
         if (key == GLFW_KEY_LEFT_SHIFT)
