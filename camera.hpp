@@ -52,7 +52,7 @@ class Camera {
     /// @param button button gave by glfw callback
     /// @param action action gave by glfw callback
     void update_input_mouse_button(int button, int action) {
-        if (button == GLFW_MOUSE_BUTTON_LEFT) {
+        if (button == GLFW_MOUSE_BUTTON_RIGHT) {
             if (action == GLFW_PRESS) mouse_pressed = true;
             if (action == GLFW_RELEASE) mouse_pressed = false;
         }
