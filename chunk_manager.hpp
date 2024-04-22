@@ -158,6 +158,8 @@ class ChunkManager {
         }
     }
 
+    /// @brief Saves a chunk to a save file by just dumping the voxel data in binary mode
+    /// @param chunk_pos the pos of the chunk to save
     void serializeChunk(glm::ivec2 chunk_pos) {
         if (chunks.find(chunk_pos) == chunks.end()) {
             std::cout << "Noooooo couldn't write an inexistant chunk to a file\n";
@@ -180,6 +182,9 @@ class ChunkManager {
         }
     }
 
+    /// @brief Loads a chunk from a binary file
+    /// @param chunk_pos the pos of the chunk to load
+    /// @return The created chunk
     std::shared_ptr<Chunk> deserializeChunk(glm::ivec2 chunk_pos) {
         std::stringstream ss{};
         ss << "../map_data/" << chunk_pos.x << "." << chunk_pos.y << ".txt";
@@ -205,6 +210,9 @@ class ChunkManager {
         return chunk;
     }
 
+    /// @brief Gets a block in world space -> chooses the right chunk and right offset
+    /// @param world_pos the block pos in world space
+    /// @return the id of the block if found, 0 in any other case
     uint8_t getBlock(glm::ivec3 world_pos) {
         glm::ivec2 chunk_pos = glm::ivec2(
             floor(world_pos.x / (float)Chunk::chunk_size.x),
@@ -221,6 +229,10 @@ class ChunkManager {
             return 0;
     }
 
+    /// @brief Sets a block in world space -> chooses the right chunk and right offset
+    /// @param world_pos the block pos in world space
+    /// @param block the id of the block to place
+    /// @param rebuild true to rebuild the mesh of the chunk and the surrounding chunks if needed
     void setBlock(glm::ivec3 world_pos, uint8_t block, bool rebuild) {
         glm::ivec2 chunk_pos = glm::ivec2(
             floor(world_pos.x / (float)Chunk::chunk_size.x),
