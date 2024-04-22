@@ -139,3 +139,13 @@ uint8_t Chunk::getBlock(int x, int y, int z, bool rec) {
 
     return voxelMap[index(x, y, z)];
 }
+
+void Chunk::setBlock(int x, int y, int z, uint8_t block) {
+    if (!allocated) return;
+    if (x < 0 || y < 0 || z < 0 ||
+        x >= chunk_size.x || y >= chunk_size.y || z >= chunk_size.z) {
+        return;
+    }
+
+    voxelMap[index(x, y, z)] = block;
+}

@@ -55,6 +55,7 @@ class Chunk {
     void voxel_map_from_noise();
 
     uint8_t getBlock(int x, int y, int z, bool rec = true);
+    void setBlock(int x, int y, int z, uint8_t block);
 
     void render(GLuint program) const {
         // Set uniforms and bind texture

@@ -92,6 +92,18 @@ void cursor_pos_callback(GLFWwindow *window, double xpos, double ypos) {
 
 void mouse_button_callback(GLFWwindow *window, int button, int action, int mods) {
     g_camera.update_input_mouse_button(button, action);
+
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+        glm::ivec3 block_pos{};
+        glm::vec3 dir = glm::normalize(g_camera.get_target() - g_camera.get_position());
+
+        if (g_chunkManager.raycast(g_camera.get_position(), dir, 15, block_pos)) {
+            std::cout << "Set block !! at {" << block_pos.x << ", " << block_pos.y << ", " << block_pos.z << "} ? :(\n";
+            g_chunkManager.setBlock(block_pos, 0, true);
+        } else {
+            std::cout << "No block ? :(\n";
+        }
+    }
 }
 
 void initGLFW() {

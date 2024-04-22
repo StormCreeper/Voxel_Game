@@ -214,6 +214,110 @@ class ChunkManager {
             return 0;
     }
 
+    void setBlock(glm::ivec3 world_pos, uint8_t block, bool rebuild) {
+        glm::ivec2 chunk_pos = glm::ivec2(
+            floor(world_pos.x / (float)Chunk::chunk_size.x),
+            floor(world_pos.z / (float)Chunk::chunk_size.z));
+
+        glm::ivec2 chunk_coords = glm::ivec2(world_pos.x, world_pos.z) - chunk_pos * glm::ivec2(Chunk::chunk_size.x, Chunk::chunk_size.z);
+
+        if (chunk_coords.x < 0 || chunk_coords.x >= Chunk::chunk_size.x || chunk_coords.y < 0 || chunk_coords.y >= Chunk::chunk_size.z)
+            std::cout << "(" << chunk_pos.x << ", " << chunk_pos.y << ", " << chunk_coords.x << ", " << chunk_coords.y << ")\n";
+
+        if (auto search = chunks.find(chunk_pos); search != chunks.end()) {
+            search->second->setBlock(chunk_coords.x, world_pos.y, chunk_coords.y, block);
+            if (rebuild) {
+                search->second->build_mesh();
+                if (chunk_coords.x == 0) regenerateOneChunkMesh(chunk_pos + glm::ivec2(-1, 0));
+                if (chunk_coords.x == Chunk::chunk_size.x - 1) regenerateOneChunkMesh(chunk_pos + glm::ivec2(1, 0));
+                if (chunk_coords.y == 0) regenerateOneChunkMesh(chunk_pos + glm::ivec2(0, -1));
+                if (chunk_coords.y == Chunk::chunk_size.z - 1) regenerateOneChunkMesh(chunk_pos + glm::ivec2(0, 1));
+            }
+        }
+    }
+
+    bool raycast(glm::vec3 origin, glm::vec3 direction, int nSteps, glm::ivec3& block_pos) {
+        glm::vec3 normal{};
+
+        block_pos.x = int(floor(origin.x));
+        block_pos.y = int(floor(origin.y));
+        block_pos.z = int(floor(origin.z));
+
+        float sideDistX;
+        float sideDistY;
+        float sideDistZ;
+
+        float deltaDX = abs(1 / direction.x);
+        float deltaDY = abs(1 / direction.y);
+        float deltaDZ = abs(1 / direction.z);
+        float perpWallDist = -1;
+
+        int stepX;
+        int stepY;
+        int stepZ;
+
+        int hit = 0;
+        int side;
+
+        if (direction.x < 0) {
+            stepX = -1;
+            sideDistX = (origin.x - block_pos.x) * deltaDX;
+        } else {
+            stepX = 1;
+            sideDistX = (float(block_pos.x) + 1.0 - origin.x) * deltaDX;
+        }
+        if (direction.y < 0) {
+            stepY = -1;
+            sideDistY = (origin.y - block_pos.y) * deltaDY;
+        } else {
+            stepY = 1;
+            sideDistY = (float(block_pos.y) + 1.0 - origin.y) * deltaDY;
+        }
+        if (direction.z < 0) {
+            stepZ = -1;
+            sideDistZ = (origin.z - block_pos.z) * deltaDZ;
+        } else {
+            stepZ = 1;
+            sideDistZ = (float(block_pos.z) + 1.0 - origin.z) * deltaDZ;
+        }
+
+        int step = 1;
+
+        for (int i = 0; i < nSteps; i++) {
+            if (sideDistX < sideDistY && sideDistX < sideDistZ) {
+                sideDistX += deltaDX;
+                block_pos.x += stepX * step;
+                side = 0;
+            } else if (sideDistY < sideDistX && sideDistY < sideDistZ) {
+                sideDistY += deltaDY;
+                block_pos.y += stepY * step;
+                side = 1;
+            } else {
+                sideDistZ += deltaDZ;
+                block_pos.z += stepZ * step;
+                side = 2;
+            }
+
+            uint8_t block = getBlock(block_pos);
+            std::cout << "pos: (" << block_pos.x << ", " << block_pos.y << ", " << block_pos.z << "), block: " << (int)block << "\n";
+            if (block != 0) {
+                if (side == 0) {
+                    perpWallDist = (block_pos.x - origin.x + (1 - stepX * step) / 2) / direction.x;
+                    normal = glm::vec3(1, 0, 0) * -float(stepX);
+                } else if (side == 1) {
+                    perpWallDist = (block_pos.y - origin.y + (1 - stepY * step) / 2) / direction.y;
+                    normal = glm::vec3(0, 1, 0) * -float(stepY);
+                } else {
+                    perpWallDist = (block_pos.z - origin.z + (1 - stepZ * step) / 2) / direction.z;
+                    normal = glm::vec3(0, 0, 1) * -float(stepZ);
+                }
+
+                break;
+            }
+        }
+        return perpWallDist >= 0;
+    }
+
     std::map<glm::ivec2, std::shared_ptr<Chunk>, cmpChunkPos> chunks{};
 
    private:
