@@ -7,8 +7,8 @@
 
 class ChunkManager;
 
-const float tex_num_x = 8;
-const float tex_num_y = 1;
+const int tex_num_x = 8;
+const int tex_num_y = 1;
 
 class Chunk {
    public:
@@ -96,7 +96,7 @@ class Chunk {
      * @return Index in the chunk array.
      */
     inline int index(glm::ivec3 pos) const {
-        return pos.x + pos.y * chunk_size.x + pos.z * chunk_size.x * chunk_size.y;
+        return pos.x * chunk_size.x * chunk_size.y + pos.y * chunk_size.x + pos.z;
     }
 
     /**
@@ -104,9 +104,8 @@ class Chunk {
      * @param pos Vertex position.
      * @param norm Vertex normal.
      * @param uv Vertex UV coordinates.
-     * @return Index of the pushed vertex.
      */
-    int push_vertex(glm::vec3 pos, glm::vec3 norm, glm::vec2 uv);
+    void push_vertex(glm::vec3 pos, glm::vec3 norm, glm::vec2 uv);
 
     /**
      * @brief Pushes a face into the mesh arrays, in the right direction and accounting for the offsets.
@@ -128,13 +127,10 @@ class Chunk {
     glm::vec2 tex_offset{};
     glm::vec2 tex_size{1, 1};
 
-    int vert_index{};
     glm::ivec2 pos{};
 
     bool allocated = false;
     ChunkManager *chunk_manager;
-
-    int current_block = 0;
 
     std::shared_ptr<Mesh> mesh{};
     glm::mat4 modelMatrix = glm::mat4(1.0f);

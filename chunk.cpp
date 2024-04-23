@@ -22,7 +22,7 @@ void Chunk::voxel_map_from_noise() {
     }
 }
 
-int Chunk::push_vertex(glm::vec3 pos, glm::vec3 norm, glm::vec2 uv) {
+void Chunk::push_vertex(glm::vec3 pos, glm::vec3 norm, glm::vec2 uv) {
     pos += world_offset;
     uv = tex_offset + uv * tex_size;
     vp.push_back(pos.x);
@@ -33,15 +33,13 @@ int Chunk::push_vertex(glm::vec3 pos, glm::vec3 norm, glm::vec2 uv) {
     vn.push_back(norm.z);
     vuv.push_back(uv.x);
     vuv.push_back(uv.y);
-
-    return vert_index++;
 }
 
 void Chunk::push_face(DIR dir, int texIndex) {
-    tex_offset.x = (float)(texIndex) / tex_num_x;
-    tex_offset.y = 0;
     tex_size.x = 1.0 / tex_num_x;
-    tex_size.y = 1.0;
+    tex_size.y = 1.0 / tex_num_y;
+    tex_offset.x = (texIndex % tex_num_x) * tex_size.x;
+    tex_offset.y = (texIndex / tex_num_x) * tex_size.y;
 
     switch (dir) {
         case DIR::UP: {
@@ -96,13 +94,11 @@ void Chunk::push_face(DIR dir, int texIndex) {
 }
 
 void Chunk::build_mesh() {
-    vert_index = 0;
-
     for (int x = 0; x < chunk_size.x; x++) {
         for (int y = 0; y < chunk_size.y; y++) {
             for (int z = 0; z < chunk_size.z; z++) {
                 world_offset = {x, y, z};
-                if (current_block = getBlock({x, y, z})) {
+                if (uint8_t current_block = getBlock({x, y, z})) {
                     BlockDesc bd = BlockPalette::get_block_desc(current_block);
 
                     if (!getBlock({x, y + 1, z})) push_face(DIR::UP, bd.face_indices[DIR::UP]);
