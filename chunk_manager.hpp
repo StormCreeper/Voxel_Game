@@ -224,7 +224,7 @@ class ChunkManager {
             std::cout << "(" << chunk_pos.x << ", " << chunk_pos.y << ", " << chunk_coords.x << ", " << chunk_coords.y << ")\n";
 
         if (auto search = chunks.find(chunk_pos); search != chunks.end()) {
-            return search->second->getBlock(chunk_coords.x, world_pos.y, chunk_coords.y, false);
+            return search->second->getBlock({chunk_coords.x, world_pos.y, chunk_coords.y}, false);
         } else
             return 0;
     }
@@ -244,7 +244,7 @@ class ChunkManager {
             std::cout << "(" << chunk_pos.x << ", " << chunk_pos.y << ", " << chunk_coords.x << ", " << chunk_coords.y << ")\n";
 
         if (auto search = chunks.find(chunk_pos); search != chunks.end()) {
-            search->second->setBlock(chunk_coords.x, world_pos.y, chunk_coords.y, block);
+            search->second->setBlock({chunk_coords.x, world_pos.y, chunk_coords.y}, block);
             if (rebuild) {
                 search->second->build_mesh();
                 if (chunk_coords.x == 0) regenerateOneChunkMesh(chunk_pos + glm::ivec2(-1, 0));

@@ -13,11 +13,10 @@ void Chunk::voxel_map_from_noise() {
     for (int x = 0; x < chunk_size.x; x++) {
         for (int y = 0; y < chunk_size.y; y++) {
             for (int z = 0; z < chunk_size.z; z++) {
-                glm::ivec3 world_pos{
-                    x + chunk_size.x * pos.x,
-                    y,
-                    z + chunk_size.z * pos.y};
-                voxelMap[index(x, y, z)] = WorldBuilder::generation_function(world_pos);
+                voxelMap[index({x, y, z})] =
+                    WorldBuilder::generation_function({x + chunk_size.x * pos.x,
+                                                       y,
+                                                       z + chunk_size.z * pos.y});
             }
         }
     }
@@ -49,7 +48,6 @@ void Chunk::push_face(DIR dir, int texIndex) {
             push_vertex({1, 1, 0}, {0, 1, 0}, {1, 0});
             push_vertex({0, 1, 0}, {0, 1, 0}, {0, 0});
             push_vertex({1, 1, 1}, {0, 1, 0}, {1, 1});
-
             push_vertex({1, 1, 1}, {0, 1, 0}, {1, 1});
             push_vertex({0, 1, 0}, {0, 1, 0}, {0, 0});
             push_vertex({0, 1, 1}, {0, 1, 0}, {0, 1});
@@ -98,56 +96,55 @@ void Chunk::push_face(DIR dir, int texIndex) {
 }
 
 void Chunk::build_mesh() {
-    vp.clear();
-    vn.clear();
-    vuv.clear();
-
     vert_index = 0;
 
     for (int x = 0; x < chunk_size.x; x++) {
         for (int y = 0; y < chunk_size.y; y++) {
             for (int z = 0; z < chunk_size.z; z++) {
                 world_offset = {x, y, z};
-                if (current_block = getBlock(x, y, z)) {
+                if (current_block = getBlock({x, y, z})) {
                     BlockDesc bd = BlockPalette::get_block_desc(current_block);
 
-                    if (!getBlock(x, y + 1, z)) push_face(DIR::UP, bd.face_indices[DIR::UP]);
-                    if (!getBlock(x, y - 1, z)) push_face(DIR::DOWN, bd.face_indices[DIR::DOWN]);
-                    if (!getBlock(x + 1, y, z)) push_face(DIR::LEFT, bd.face_indices[DIR::LEFT]);
-                    if (!getBlock(x - 1, y, z)) push_face(DIR::RIGHT, bd.face_indices[DIR::RIGHT]);
-                    if (!getBlock(x, y, z + 1)) push_face(DIR::FRONT, bd.face_indices[DIR::FRONT]);
-                    if (!getBlock(x, y, z - 1)) push_face(DIR::BACK, bd.face_indices[DIR::BACK]);
+                    if (!getBlock({x, y + 1, z})) push_face(DIR::UP, bd.face_indices[DIR::UP]);
+                    if (!getBlock({x, y - 1, z})) push_face(DIR::DOWN, bd.face_indices[DIR::DOWN]);
+                    if (!getBlock({x + 1, y, z})) push_face(DIR::LEFT, bd.face_indices[DIR::LEFT]);
+                    if (!getBlock({x - 1, y, z})) push_face(DIR::RIGHT, bd.face_indices[DIR::RIGHT]);
+                    if (!getBlock({x, y, z + 1})) push_face(DIR::FRONT, bd.face_indices[DIR::FRONT]);
+                    if (!getBlock({x, y, z - 1})) push_face(DIR::BACK, bd.face_indices[DIR::BACK]);
                 }
             }
         }
     }
 
     mesh->initGPUGeometry(vp, vn, vuv);
+
+    vp.clear();
+    vn.clear();
+    vuv.clear();
 }
 
-uint8_t Chunk::getBlock(int x, int y, int z, bool rec) {
+uint8_t Chunk::getBlock(glm::ivec3 block_pos, bool rec) {
     if (!allocated) return 0;
-    if (x < 0 || y < 0 || z < 0 ||
-        x >= chunk_size.x || y >= chunk_size.y || z >= chunk_size.z) {
+    if (block_pos.x < 0 || block_pos.y < 0 || block_pos.z < 0 ||
+        block_pos.x >= chunk_size.x || block_pos.y >= chunk_size.y || block_pos.z >= chunk_size.z) {
         if (rec)
-            return chunk_manager->getBlock(glm::ivec3(
-                x + pos.x * chunk_size.x,
-                y,
-                z + pos.y * chunk_size.z));
+            return chunk_manager->getBlock({block_pos.x + pos.x * chunk_size.x,
+                                            block_pos.y,
+                                            block_pos.z + pos.y * chunk_size.z});
         return 0;
     }
 
-    return voxelMap[index(x, y, z)];
+    return voxelMap[index(block_pos)];
 }
 
-void Chunk::setBlock(int x, int y, int z, uint8_t block) {
+void Chunk::setBlock(glm::ivec3 block_pos, uint8_t block) {
     if (!allocated) return;
-    if (x < 0 || y < 0 || z < 0 ||
-        x >= chunk_size.x || y >= chunk_size.y || z >= chunk_size.z) {
+    if (block_pos.x < 0 || block_pos.y < 0 || block_pos.z < 0 ||
+        block_pos.x >= chunk_size.x || block_pos.y >= chunk_size.y || block_pos.z >= chunk_size.z) {
         return;
     }
 
     hasBeenModified = true;
 
-    voxelMap[index(x, y, z)] = block;
+    voxelMap[index(block_pos)] = block;
 }

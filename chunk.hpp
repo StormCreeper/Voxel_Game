@@ -20,6 +20,11 @@ class Chunk {
     }
 
    public:
+    /**
+     * @brief Constructor for Chunk class.
+     * @param pos Position of the chunk in chunk coordinates.
+     * @param chunk_manager Pointer to the parent ChunkManager.
+     */
     Chunk(glm::ivec2 pos, ChunkManager *chunk_manager) {
         mesh = std::make_shared<Mesh>();
         this->chunk_manager = chunk_manager;
@@ -29,12 +34,15 @@ class Chunk {
         mesh->genBuffers();
     }
 
+    /// @brief Destructor for Chunk class.
     ~Chunk() {
         free_mem();
     }
 
+    /// @brief Builds (or rebuilds) the chunk mesh based on the voxel grid
     void build_mesh();
 
+    /// @brief Allocates memory for the chunk's voxel data
     void allocate() {
         voxelMap = (uint8_t *)malloc(chunk_size.x * chunk_size.y * chunk_size.z * sizeof(uint8_t));
         if (!voxelMap) {
@@ -52,27 +60,59 @@ class Chunk {
         std::cout << "Freed chunk at (" << pos.x << ", " << pos.y << ")\n";
         allocated = false;
     }
+
+    /// @brief generate a voxel map using different noise functions
     void voxel_map_from_noise();
 
-    uint8_t getBlock(int x, int y, int z, bool rec = true);
-    void setBlock(int x, int y, int z, uint8_t block);
+    /**
+     * @brief Gets a block ID in the chunk array. If the @param rec flag is set and the block exceed the chunk's bounds, look in neighbouring chunks.
+     * @param block_pos position of the block in local space
+     * @param rec true to allows looking in neighbouring chunks
+     * @return the block's ID
+     */
+    uint8_t getBlock(glm::ivec3 block_pos, bool rec = true);
 
+    /**
+     * @brief Sets a block without rebuilding the mesh
+     * @param block_pos
+     * @param block
+     */
+    void setBlock(glm::ivec3 block_pos, uint8_t block);
+
+    /**
+     * @brief Renders the chunk
+     * @param program the shader program id
+     */
     void render(GLuint program) const {
-        // Set uniforms and bind texture
         setUniform(program, "u_modelMat", modelMatrix);
-
         mesh->render();
-
         setUniform(program, "u_modelMat", glm::mat4(1.0f));
     }
 
    private:
-    inline int index(int x, int y, int z) const {
-        return x + y * chunk_size.x + z * chunk_size.x * chunk_size.y;
+    /**
+     * @brief Calculates the index in the chunk array for a given local space position.
+     * @param pos Position in local space.
+     * @return Index in the chunk array.
+     */
+    inline int index(glm::ivec3 pos) const {
+        return pos.x + pos.y * chunk_size.x + pos.z * chunk_size.x * chunk_size.y;
     }
 
+    /**
+     * @brief Pushes a vertex into the mesh arrays.
+     * @param pos Vertex position.
+     * @param norm Vertex normal.
+     * @param uv Vertex UV coordinates.
+     * @return Index of the pushed vertex.
+     */
     int push_vertex(glm::vec3 pos, glm::vec3 norm, glm::vec2 uv);
 
+    /**
+     * @brief Pushes a face into the mesh arrays, in the right direction and accounting for the offsets.
+     * @param dir Direction of the face.
+     * @param texIndex Texture index.
+     */
     void push_face(DIR dir, int texIndex);
 
    public:
