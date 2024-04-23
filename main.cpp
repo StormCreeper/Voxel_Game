@@ -27,6 +27,8 @@ Camera g_camera{};
 
 ChunkManager g_chunkManager{};
 
+int g_tool = 1;
+
 // Executed each time the window is resized. Adjust the aspect ratio and the rendering viewport to the current window.
 void window_size_callback(GLFWwindow *window, int width, int height) {
     g_camera.set_aspect_ratio(static_cast<float>(width) / static_cast<float>(height));
@@ -78,6 +80,8 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 
             g_chunkManager.saveChunks();
         }
+        if (key >= GLFW_KEY_KP_1 && key < GLFW_KEY_KP_7)
+            g_tool = g_tool = key - GLFW_KEY_KP_1;
     }
     if (action == GLFW_RELEASE) {
         if (key == GLFW_KEY_LEFT_SHIFT) shiftPressed = false;
@@ -115,7 +119,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
 
         if (g_chunkManager.raycast(g_camera.get_position(), dir, 15, block_pos, normal)) {
             std::cout << "Set block !! at {" << block_pos.x << ", " << block_pos.y << ", " << block_pos.z << "} ? :(\n";
-            g_chunkManager.setBlock(block_pos + normal, 1, true);
+            g_chunkManager.setBlock(block_pos + normal, g_tool, true);
         } else {
             std::cout << "No block ? :(\n";
         }

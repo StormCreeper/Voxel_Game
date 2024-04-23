@@ -31,6 +31,8 @@ class BlockPalette {
         block_descs.push_back({{4, 4, 4, 4, 4, 4}});
         block_descs.push_back({{1, 1, 1, 1, 1, 1}});
         block_descs.push_back({{3, 1, 2, 2, 2, 2}});
+        block_descs.push_back({{7, 7, 7, 7, 7, 7}});
+        block_descs.push_back({{6, 6, 5, 5, 5, 5}});
 
         texture = std::make_shared<Texture>("../resources/media/atlas.png");
     }
