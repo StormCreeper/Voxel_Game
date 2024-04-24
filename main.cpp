@@ -236,15 +236,7 @@ void render() {
     setUniform(g_program, "u_viewMat", viewMatrix);
     setUniform(g_program, "u_projMat", projMatrix);
 
-    setUniform(g_program, "u_cameraPosition", g_camera.get_position());
-
-    setUniform(g_program, "u_sunColor", glm::vec3(1.0f, 1.0f, 0.0f));
-    setUniform(g_program, "u_sunPosition", glm::vec3(5.0f, 25.0f, 4.0f));
-
-    setUniform(g_program, "u_ambientLight", glm::vec3(1.0f, 1.0f, 1.0f));
-
     setUniform(g_program, "u_texture", 0);
-    setUniform(g_program, "u_objectColor", glm::vec3(1, 1, 1));
 
     g_chunkManager.renderAll(g_program, g_camera);
 }

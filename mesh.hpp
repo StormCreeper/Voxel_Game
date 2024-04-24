@@ -18,8 +18,8 @@
 class Mesh {
    public:
     void genBuffers();
-    void initGPUGeometry(const std::vector<float> &vertexPositions, const std::vector<float> &vertexNormals, const std::vector<float> &vertexUVs);
-    void setGPUGeometry(GLuint posVbo, GLuint normalVbo, GLuint uvVbo, GLuint vao, size_t numIndices);
+    void initGPUGeometry(const std::vector<float> &vertexPositions, const std::vector<float> &vertexLighting, const std::vector<float> &vertexUVs);
+    void setGPUGeometry(GLuint posVbo, GLuint lightingVbo, GLuint uvVbo, GLuint vao, size_t numIndices);
     void render() const;
 
     ~Mesh();
@@ -27,7 +27,7 @@ class Mesh {
    private:
     GLuint m_vao = 0;
     GLuint m_posVbo = 0;
-    GLuint m_normalVbo = 0;
+    GLuint m_lightingVbo = 0;
     GLuint m_uvVbo = 0;
 
     size_t m_numIndices = 0;

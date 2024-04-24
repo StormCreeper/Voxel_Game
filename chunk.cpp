@@ -22,15 +22,13 @@ void Chunk::voxel_map_from_noise() {
     }
 }
 
-void Chunk::push_vertex(glm::vec3 pos, glm::vec3 norm, glm::vec2 uv) {
+void Chunk::push_vertex(glm::vec3 pos, float lighting, glm::vec2 uv) {
     pos += world_offset;
     uv = tex_offset + uv * tex_size;
     vp.push_back(pos.x);
     vp.push_back(pos.y);
     vp.push_back(pos.z);
-    vn.push_back(norm.x);
-    vn.push_back(norm.y);
-    vn.push_back(norm.z);
+    vn.push_back(lighting);
     vuv.push_back(uv.x);
     vuv.push_back(uv.y);
 }
@@ -43,52 +41,52 @@ void Chunk::push_face(DIR dir, int texIndex) {
 
     switch (dir) {
         case DIR::UP: {
-            push_vertex({1, 1, 0}, {0, 1, 0}, {1, 0});
-            push_vertex({0, 1, 0}, {0, 1, 0}, {0, 0});
-            push_vertex({1, 1, 1}, {0, 1, 0}, {1, 1});
-            push_vertex({1, 1, 1}, {0, 1, 0}, {1, 1});
-            push_vertex({0, 1, 0}, {0, 1, 0}, {0, 0});
-            push_vertex({0, 1, 1}, {0, 1, 0}, {0, 1});
+            push_vertex({1, 1, 0}, 1, {1, 0});
+            push_vertex({0, 1, 0}, 1, {0, 0});
+            push_vertex({1, 1, 1}, 1, {1, 1});
+            push_vertex({1, 1, 1}, 1, {1, 1});
+            push_vertex({0, 1, 0}, 1, {0, 0});
+            push_vertex({0, 1, 1}, 1, {0, 1});
         } break;
         case DIR::DOWN: {
-            push_vertex({0, 0, 0}, {0, -1, 0}, {0, 0});
-            push_vertex({1, 0, 0}, {0, -1, 0}, {1, 0});
-            push_vertex({1, 0, 1}, {0, -1, 0}, {1, 1});
-            push_vertex({0, 0, 0}, {0, -1, 0}, {0, 0});
-            push_vertex({1, 0, 1}, {0, -1, 0}, {1, 1});
-            push_vertex({0, 0, 1}, {0, -1, 0}, {0, 1});
+            push_vertex({0, 0, 0}, 0.5, {0, 0});
+            push_vertex({1, 0, 0}, 0.5, {1, 0});
+            push_vertex({1, 0, 1}, 0.5, {1, 1});
+            push_vertex({0, 0, 0}, 0.5, {0, 0});
+            push_vertex({1, 0, 1}, 0.5, {1, 1});
+            push_vertex({0, 0, 1}, 0.5, {0, 1});
         } break;
         case DIR::FRONT: {
-            push_vertex({0, 0, 1}, {0, 0, 1}, {0, 1});
-            push_vertex({1, 0, 1}, {0, 0, 1}, {1, 1});
-            push_vertex({1, 1, 1}, {0, 0, 1}, {1, 0});
-            push_vertex({0, 0, 1}, {0, 0, 1}, {0, 1});
-            push_vertex({1, 1, 1}, {0, 0, 1}, {1, 0});
-            push_vertex({0, 1, 1}, {0, 0, 1}, {0, 0});
+            push_vertex({0, 0, 1}, 0.9, {0, 1});
+            push_vertex({1, 0, 1}, 0.9, {1, 1});
+            push_vertex({1, 1, 1}, 0.9, {1, 0});
+            push_vertex({0, 0, 1}, 0.9, {0, 1});
+            push_vertex({1, 1, 1}, 0.9, {1, 0});
+            push_vertex({0, 1, 1}, 0.9, {0, 0});
         } break;
         case DIR::BACK: {
-            push_vertex({1, 0, 0}, {0, 0, -1}, {1, 1});
-            push_vertex({0, 0, 0}, {0, 0, -1}, {0, 1});
-            push_vertex({1, 1, 0}, {0, 0, -1}, {1, 0});
-            push_vertex({1, 1, 0}, {0, 0, -1}, {1, 0});
-            push_vertex({0, 0, 0}, {0, 0, -1}, {0, 1});
-            push_vertex({0, 1, 0}, {0, 0, -1}, {0, 0});
+            push_vertex({1, 0, 0}, 0.6, {1, 1});
+            push_vertex({0, 0, 0}, 0.6, {0, 1});
+            push_vertex({1, 1, 0}, 0.6, {1, 0});
+            push_vertex({1, 1, 0}, 0.6, {1, 0});
+            push_vertex({0, 0, 0}, 0.6, {0, 1});
+            push_vertex({0, 1, 0}, 0.6, {0, 0});
         } break;
         case DIR::RIGHT: {
-            push_vertex({0, 1, 0}, {-1, 0, 0}, {0, 0});
-            push_vertex({0, 0, 0}, {-1, 0, 0}, {0, 1});
-            push_vertex({0, 1, 1}, {-1, 0, 0}, {1, 0});
-            push_vertex({0, 1, 1}, {-1, 0, 0}, {1, 0});
-            push_vertex({0, 0, 0}, {-1, 0, 0}, {0, 1});
-            push_vertex({0, 0, 1}, {-1, 0, 0}, {1, 1});
+            push_vertex({0, 1, 0}, 0.8, {0, 0});
+            push_vertex({0, 0, 0}, 0.8, {0, 1});
+            push_vertex({0, 1, 1}, 0.8, {1, 0});
+            push_vertex({0, 1, 1}, 0.8, {1, 0});
+            push_vertex({0, 0, 0}, 0.8, {0, 1});
+            push_vertex({0, 0, 1}, 0.8, {1, 1});
         } break;
         case DIR::LEFT: {
-            push_vertex({1, 0, 0}, {1, 0, 0}, {0, 1});
-            push_vertex({1, 1, 0}, {1, 0, 0}, {0, 0});
-            push_vertex({1, 1, 1}, {1, 0, 0}, {1, 0});
-            push_vertex({1, 0, 0}, {1, 0, 0}, {0, 1});
-            push_vertex({1, 1, 1}, {1, 0, 0}, {1, 0});
-            push_vertex({1, 0, 1}, {1, 0, 0}, {1, 1});
+            push_vertex({1, 0, 0}, 0.7, {0, 1});
+            push_vertex({1, 1, 0}, 0.7, {0, 0});
+            push_vertex({1, 1, 1}, 0.7, {1, 0});
+            push_vertex({1, 0, 0}, 0.7, {0, 1});
+            push_vertex({1, 1, 1}, 0.7, {1, 0});
+            push_vertex({1, 0, 1}, 0.7, {1, 1});
         } break;
     }
 }

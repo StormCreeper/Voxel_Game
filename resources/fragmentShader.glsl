@@ -5,35 +5,18 @@
 
 #version 330 core
 
-out vec4 outColor;	  // Shader output: the color response attached to this fragment
+out vec4 outColor;
 
-in vec3 vertexNormal;  // Input from the vertex shader
+in float lighting;
 in vec3 worldPos;
 in vec2 textureUV;
 
 uniform vec3 u_cameraPosition;
-
-uniform vec3 u_ambientLight;
-
-uniform vec3 u_sunColor;
-uniform vec3 u_sunPosition;
-
-uniform vec3 u_objectColor;
 
 uniform sampler2D u_texture;
 
 void main() {
 	vec3 objColor = texture(u_texture, textureUV).xyz;
 
-	vec3 normal = normalize(vertexNormal);
-	
-	vec3 lightDir = normalize(u_sunPosition - worldPos);
-
-	vec3 ambient = objColor * u_ambientLight;
-
-	float diff = max(dot(normal, lightDir), 0.0f);
-
-	vec3 diffuse = objColor * diff;
-
-	outColor = vec4(ambient * 0.7 + diffuse * 0.3, 1.0f);
+	outColor = vec4(objColor * lighting, 1.0f);
 }

@@ -13,11 +13,11 @@
 void Mesh::genBuffers() {
     glGenVertexArrays(1, &m_vao);
     glGenBuffers(1, &m_posVbo);
-    glGenBuffers(1, &m_normalVbo);
+    glGenBuffers(1, &m_lightingVbo);
     glGenBuffers(1, &m_uvVbo);
 }
 
-void Mesh::initGPUGeometry(const std::vector<float> &vertexPositions, const std::vector<float> &vertexNormals, const std::vector<float> &vertexUVs) {
+void Mesh::initGPUGeometry(const std::vector<float> &vertexPositions, const std::vector<float> &vertexLighting, const std::vector<float> &vertexUVs) {
     glBindVertexArray(m_vao);
 
     // Generate a GPU buffer to store the positions of the vertices
@@ -28,10 +28,12 @@ void Mesh::initGPUGeometry(const std::vector<float> &vertexPositions, const std:
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
     glEnableVertexAttribArray(0);
 
+    vertexBufferSize = sizeof(float) * vertexLighting.size();
+
     // Same for the normal vectors
-    glBindBuffer(GL_ARRAY_BUFFER, m_normalVbo);
-    glBufferData(GL_ARRAY_BUFFER, vertexBufferSize, vertexNormals.data(), GL_DYNAMIC_READ);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
+    glBindBuffer(GL_ARRAY_BUFFER, m_lightingVbo);
+    glBufferData(GL_ARRAY_BUFFER, vertexBufferSize, vertexLighting.data(), GL_DYNAMIC_READ);
+    glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, 1 * sizeof(GLfloat), 0);
     glEnableVertexAttribArray(1);
 
     vertexBufferSize = sizeof(float) * vertexUVs.size();
@@ -56,7 +58,7 @@ void Mesh::initGPUGeometry(const std::vector<float> &vertexPositions, const std:
 
 void Mesh::setGPUGeometry(GLuint posVbo, GLuint normalVbo, GLuint uvVbo, GLuint vao, size_t numIndices) {
     m_posVbo = posVbo;
-    m_normalVbo = normalVbo;
+    m_lightingVbo = normalVbo;
     m_uvVbo = uvVbo;
     m_vao = vao;
     m_numIndices = numIndices;
@@ -70,7 +72,7 @@ void Mesh::render() const {
 
 Mesh::~Mesh() {
     if (m_posVbo) glDeleteBuffers(1, &m_posVbo);
-    if (m_normalVbo) glDeleteBuffers(1, &m_normalVbo);
+    if (m_lightingVbo) glDeleteBuffers(1, &m_lightingVbo);
     if (m_uvVbo) glDeleteBuffers(1, &m_uvVbo);
 
     if (m_vao) glDeleteVertexArrays(1, &m_vao);

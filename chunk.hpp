@@ -105,7 +105,7 @@ class Chunk {
      * @param norm Vertex normal.
      * @param uv Vertex UV coordinates.
      */
-    void push_vertex(glm::vec3 pos, glm::vec3 norm, glm::vec2 uv);
+    void push_vertex(glm::vec3 pos, float lighting, glm::vec2 uv);
 
     /**
      * @brief Pushes a face into the mesh arrays, in the right direction and accounting for the offsets.
