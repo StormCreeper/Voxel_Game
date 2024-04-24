@@ -43,10 +43,6 @@ bool shiftPressed = false;
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
     g_camera.update_input_keys(key, action);
 
-    static bool p_unpressed = false;
-    static bool o_unpressed = false;
-    static bool r_unpressed = false;
-    static bool t_unpressed = false;
     if (action == GLFW_PRESS) {
         if (key == GLFW_KEY_Z) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -60,35 +56,29 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         if (key == GLFW_KEY_LEFT_SHIFT)
             shiftPressed = true;
 
-        if (key == GLFW_KEY_P && p_unpressed) {
-            p_unpressed = false;
-
+        if (key == GLFW_KEY_P) {
             g_chunkManager.serializeChunk(glm::ivec2(0, 0));
         }
-        if (key == GLFW_KEY_O && o_unpressed) {
-            o_unpressed = false;
-
+        if (key == GLFW_KEY_O) {
             g_chunkManager.chunks.insert_or_assign(glm::ivec2(0, 0), g_chunkManager.deserializeChunk(glm::ivec2(0, 0)));
         }
-        if (key == GLFW_KEY_R && r_unpressed) {
-            r_unpressed = false;
-
+        if (key == GLFW_KEY_R) {
             g_chunkManager.reloadChunks();
         }
-        if (key == GLFW_KEY_T && t_unpressed) {
-            t_unpressed = false;
-
+        if (key == GLFW_KEY_T) {
             g_chunkManager.saveChunks();
         }
-        if (key >= GLFW_KEY_KP_1 && key < GLFW_KEY_KP_7)
-            g_tool = g_tool = key - GLFW_KEY_KP_1;
+        if (key == GLFW_KEY_LEFT) {
+            int size = BlockPalette::block_descs.size();
+            if (--g_tool <= 0) g_tool = size - 1;
+        }
+        if (key == GLFW_KEY_RIGHT) {
+            int size = BlockPalette::block_descs.size();
+            if (++g_tool >= size) g_tool = 1;
+        }
     }
     if (action == GLFW_RELEASE) {
         if (key == GLFW_KEY_LEFT_SHIFT) shiftPressed = false;
-        if (key == GLFW_KEY_P) p_unpressed = true;
-        if (key == GLFW_KEY_O) o_unpressed = true;
-        if (key == GLFW_KEY_R) r_unpressed = true;
-        if (key == GLFW_KEY_T) t_unpressed = true;
     }
 }
 
@@ -105,7 +95,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
         glm::vec3 dir = glm::normalize(g_camera.get_target() - g_camera.get_position());
 
         if (g_chunkManager.raycast(g_camera.get_position(), dir, 15, block_pos, normal)) {
-            std::cout << "Set block !! at {" << block_pos.x << ", " << block_pos.y << ", " << block_pos.z << "} ? :(\n";
+            std::cout << "Remove block !! at {" << block_pos.x << ", " << block_pos.y << ", " << block_pos.z << "} ? :(\n";
             g_chunkManager.setBlock(block_pos, 0, true);
         } else {
             std::cout << "No block ? :(\n";
@@ -118,7 +108,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
         glm::vec3 dir = glm::normalize(g_camera.get_target() - g_camera.get_position());
 
         if (g_chunkManager.raycast(g_camera.get_position(), dir, 15, block_pos, normal)) {
-            std::cout << "Set block !! at {" << block_pos.x << ", " << block_pos.y << ", " << block_pos.z << "} ? :(\n";
+            std::cout << "Set block !! at {" << block_pos.x << ", " << block_pos.y << ", " << block_pos.z << "} ? Block ID: " << g_tool << " :(\n";
             g_chunkManager.setBlock(block_pos + normal, g_tool, true);
         } else {
             std::cout << "No block ? :(\n";

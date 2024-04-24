@@ -8,7 +8,7 @@
 class ChunkManager;
 
 const int tex_num_x = 8;
-const int tex_num_y = 1;
+const int tex_num_y = 2;
 
 class Chunk {
    public:
