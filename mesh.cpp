@@ -65,9 +65,9 @@ void Mesh::setGPUGeometry(GLuint posVbo, GLuint normalVbo, GLuint uvVbo, GLuint 
 }
 
 void Mesh::render() const {
-    glBindVertexArray(m_vao);  // activate the VAO storing geometry data
+    glBindVertexArray(m_vao);
     glDrawArrays(GL_TRIANGLES, 0, m_numIndices);
-    glBindVertexArray(0);  // deactivate the VAO again
+    glBindVertexArray(0);
 }
 
 Mesh::~Mesh() {

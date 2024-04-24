@@ -2,9 +2,7 @@
 #define CUBE_MAP_HPP
 
 #include "texture.hpp"
-#include "mesh.hpp"
 #include "shader.hpp"
-#include <memory>
 
 class CubeMap {
    public:
@@ -63,57 +61,21 @@ class CubeMap {
 
         };
 
-        std::vector<int> triangleIndices = {
-            // front
-            0, 2, 1,
-            2, 0, 3,
-            // right
-            1, 6, 5,
-            6, 1, 2,
-            // back
-            7, 5, 6,
-            5, 7, 4,
-            // left
-            4, 3, 0,
-            3, 4, 7,
-            // bottom
-            4, 1, 5,
-            1, 4, 0,
-            // top
-            3, 6, 2,
-            6, 3, 7};
-
-        GLuint vao;
-        GLuint posVbo, ibo;
-
-        // Create a single handle, vertex array object that contains attributes,
-        // vertex buffer objects (e.g., vertex's position, normal, and color)
-        glGenVertexArrays(1, &vao);  // If your system doesn't support OpenGL 4.5, you should use this instead of glCreateVertexArrays.
+        glGenVertexArrays(1, &vao);
 
         glBindVertexArray(vao);
 
-        // Generate a GPU buffer to store the positions of the vertices
-        size_t vertexBufferSize = sizeof(float) * vertexPositions.size();  // Gather the size of the buffer from the CPU-side vector
+        size_t vertexBufferSize = sizeof(float) * vertexPositions.size();
 
-        glGenBuffers(1, &posVbo);
-        glBindBuffer(GL_ARRAY_BUFFER, posVbo);
-        glBufferData(GL_ARRAY_BUFFER, vertexBufferSize, vertexPositions.data(), GL_DYNAMIC_READ);
+        glGenBuffers(1, &pos_vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, pos_vbo);
+        glBufferData(GL_ARRAY_BUFFER, vertexBufferSize, vertexPositions.data(), GL_STATIC_DRAW);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
         glEnableVertexAttribArray(0);
 
-        // Same for an index buffer object that stores the list of indices of the
-        // triangles forming the mesh
-        size_t indexBufferSize = sizeof(unsigned int) * triangleIndices.size();
-        glGenBuffers(1, &ibo);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexBufferSize, triangleIndices.data(), GL_DYNAMIC_READ);
+        glBindVertexArray(0);
 
-        glBindVertexArray(0);  // deactivate the VAO for now, will be activated again when rendering
-
-        size_t numIndices = triangleIndices.size();
-
-        mesh = std::make_shared<Mesh>();
-        mesh->setGPUGeometry(posVbo, 0, 0, vao, numIndices);
+        numIndices = vertexPositions.size() / 3;
     }
 
     ~CubeMap() {
@@ -132,7 +94,9 @@ class CubeMap {
         glActiveTexture(GL_TEXTURE0);
         texture->bind();
 
-        mesh->render();
+        glBindVertexArray(vao);
+        glDrawArrays(GL_TRIANGLES, 0, numIndices);
+        glBindVertexArray(0);
 
         glDepthMask(GL_TRUE);
     }
@@ -140,7 +104,8 @@ class CubeMap {
    private:
     GLuint program{};
     std::shared_ptr<Texture> texture{};
-    std::shared_ptr<Mesh> mesh{};
+    GLuint vao, pos_vbo;
+    size_t numIndices;
 };
 
 #endif  // CUBE_MAP_HPP
