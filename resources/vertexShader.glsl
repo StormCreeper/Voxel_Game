@@ -9,7 +9,7 @@ layout(location=0) in uint vPosition;
 layout(location=1) in float vLighting;
 layout(location=2) in vec2 vUV;
 
-uniform mat4 u_viewMat, u_projMat;
+uniform mat4 u_viewProjMat;
 
 uniform ivec3 u_chunkSize;
 uniform ivec3 u_chunkPos;
@@ -24,7 +24,7 @@ void main() {
 	pos.z = (vPosition / (u_chunkSize.x+1)) % (u_chunkSize.z+1);
 	pos.y = vPosition / ((u_chunkSize.x+1) * (u_chunkSize.z+1));
 
-	gl_Position =  u_projMat * u_viewMat * vec4(pos + u_chunkPos * u_chunkSize, 1.0);
+	gl_Position =  u_viewProjMat * vec4(pos + u_chunkPos * u_chunkSize, 1.0);
 
 	lighting = vLighting;
 	textureUV = vUV;

@@ -247,8 +247,7 @@ void render() {
 
     glUseProgram(g_program);
 
-    setUniform(g_program, "u_viewMat", viewMatrix);
-    setUniform(g_program, "u_projMat", projMatrix);
+    setUniform(g_program, "u_viewProjMat", projMatrix * viewMatrix);
 
     setUniform(g_program, "u_texture", 0);
 
