@@ -136,8 +136,8 @@ void initGLFW() {
     }
 
     // Before creating the window, set some option flags
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
@@ -178,6 +178,8 @@ void initOpenGL() {
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(glDebugOutput, nullptr);
     glDebugMessageControl(GL_DEBUG_SOURCE_API, GL_DEBUG_TYPE_ERROR, GL_DEBUG_SEVERITY_HIGH, 0, nullptr, GL_TRUE);
+
+    glfwSwapInterval(0);
 }
 
 void initScene() {
@@ -205,28 +207,50 @@ void initScene() {
     g_camera.set_screen_center(glm::vec2(1024 / 2, 768 / 2));
 }
 
+float last_time = 0;
+int nb_frames = 0;
+
 void init() {
     initGLFW();
     initOpenGL();
 
     initScene();
+
+    last_time = glfwGetTime();
 }
 
-void clear() {
-    glDeleteProgram(g_program);
+/*
+Perfs :
+    Unplugged:
+     Still = 45 fps
+     Moving = 19 fps
 
-    glfwDestroyWindow(g_window);
-    glfwTerminate();
-}
+    Plugged:
+     Still = 815 fps
+     Moving = 70 fps
+*/
 
-// The main rendering call
 void render() {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);  // Erase the color and z buffers.
+    nb_frames++;
+    float time_now = glfwGetTime();
+    if (time_now - last_time > 1) {
+        float fps = nb_frames / (time_now - last_time);
+
+        std::stringstream ss;
+        ss << "Minecraft clone attemps #93180289301 - " << fps << " FPS";
+
+        glfwSetWindowTitle(g_window, ss.str().c_str());
+        nb_frames = 0;
+        last_time = time_now;
+    }
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     const glm::mat4 viewMatrix = g_camera.compute_view_matrix();
     const glm::mat4 projMatrix = g_camera.compute_projection_matrix();
 
     // Render stars
+
     g_cubeMap->render(projMatrix, viewMatrix);
 
     // Render the rest
@@ -241,9 +265,13 @@ void render() {
     g_chunkManager.renderAll(g_program, g_camera);
 }
 
-// Update any accessible variable based on the current time
+float last_physic_time = 0;
+
 void update(const float currentTimeInSec) {
-    g_camera.update();
+    float delta_time = currentTimeInSec - last_physic_time;
+    last_physic_time = currentTimeInSec;
+
+    g_camera.update(delta_time);
 
     glm::vec3 cam_pos = g_camera.get_position();
 
@@ -251,6 +279,13 @@ void update(const float currentTimeInSec) {
     g_chunkManager.generateOrLoadOneChunk(cam_pos);
 
     g_chunkManager.unloadUselessChunks(cam_pos);
+}
+
+void clear() {
+    glDeleteProgram(g_program);
+
+    glfwDestroyWindow(g_window);
+    glfwTerminate();
 }
 
 int main(int argc, char **argv) {
