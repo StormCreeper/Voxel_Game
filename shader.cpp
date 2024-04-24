@@ -57,6 +57,10 @@ void setUniform(GLuint program, const std::string &name, const glm::vec3 &v) {
     GLint loc = glGetUniformLocation(program, name.c_str());
     glUniform3fv(loc, 1, glm::value_ptr(v));
 }
+void setUniform(GLuint program, const std::string &name, const glm::ivec3 &v) {
+    GLint loc = glGetUniformLocation(program, name.c_str());
+    glUniform3iv(loc, 1, glm::value_ptr(v));
+}
 void setUniform(GLuint program, const std::string &name, const glm::vec4 &v) {
     GLint loc = glGetUniformLocation(program, name.c_str());
     glUniform4fv(loc, 1, glm::value_ptr(v));

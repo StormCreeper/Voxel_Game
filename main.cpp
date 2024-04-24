@@ -216,7 +216,7 @@ Perfs :
      Moving = 19 fps
 
     Plugged:
-     Still = 815 fps
+     Still = 815 fps -> 3000 fps
      Moving = 70 fps
 */
 
@@ -251,6 +251,8 @@ void render() {
     setUniform(g_program, "u_projMat", projMatrix);
 
     setUniform(g_program, "u_texture", 0);
+
+    setUniform(g_program, "u_chunkSize", Chunk::chunk_size);
 
     g_chunkManager.renderAll(g_program, g_camera);
 }

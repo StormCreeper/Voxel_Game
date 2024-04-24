@@ -22,12 +22,11 @@ void Chunk::voxel_map_from_noise() {
     }
 }
 
-void Chunk::push_vertex(glm::vec3 pos, float lighting, glm::vec2 uv) {
+void Chunk::push_vertex(glm::ivec3 pos, float lighting, glm::vec2 uv) {
     pos += world_offset;
     uv = tex_offset + uv * tex_size;
-    vp.push_back(pos.x);
-    vp.push_back(pos.y);
-    vp.push_back(pos.z);
+    GLuint ipos = pos.x + pos.z * (Chunk::chunk_size.x + 1) + pos.y * (Chunk::chunk_size.x + 1) * (Chunk::chunk_size.z + 1);
+    vp.push_back(ipos);
     vn.push_back(lighting);
     vuv.push_back(uv.x);
     vuv.push_back(uv.y);

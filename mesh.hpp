@@ -18,7 +18,7 @@
 class Mesh {
    public:
     void genBuffers();
-    void initGPUGeometry(const std::vector<float> &vertexPositions, const std::vector<float> &vertexLighting, const std::vector<float> &vertexUVs);
+    void initGPUGeometry(const std::vector<GLuint> &vertexPositions, const std::vector<float> &vertexLighting, const std::vector<float> &vertexUVs);
     void setGPUGeometry(GLuint posVbo, GLuint lightingVbo, GLuint uvVbo, GLuint vao, size_t numIndices);
     void render() const;
 

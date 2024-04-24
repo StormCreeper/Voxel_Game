@@ -18,6 +18,7 @@ void setUniform(GLuint program, const std::string &name, float x);
 void setUniform(GLuint program, const std::string &name, int x);
 void setUniform(GLuint program, const std::string &name, bool x);
 void setUniform(GLuint program, const std::string &name, const glm::vec3 &v);
+void setUniform(GLuint program, const std::string &name, const glm::ivec3 &v);
 void setUniform(GLuint program, const std::string &name, const glm::vec4 &v);
 void setUniform(GLuint program, const std::string &name, const glm::mat3 &m);
 void setUniform(GLuint program, const std::string &name, const glm::mat4 &m);

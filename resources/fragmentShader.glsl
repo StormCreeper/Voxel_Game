@@ -8,7 +8,6 @@
 out vec4 outColor;
 
 in float lighting;
-in vec3 worldPos;
 in vec2 textureUV;
 
 uniform vec3 u_cameraPosition;

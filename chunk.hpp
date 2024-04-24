@@ -84,9 +84,8 @@ class Chunk {
      * @param program the shader program id
      */
     void render(GLuint program) const {
-        setUniform(program, "u_modelMat", modelMatrix);
+        setUniform(program, "u_chunkPos", glm::ivec3(pos.x, 0, pos.y));
         mesh->render();
-        setUniform(program, "u_modelMat", glm::mat4(1.0f));
     }
 
    private:
@@ -105,7 +104,7 @@ class Chunk {
      * @param norm Vertex normal.
      * @param uv Vertex UV coordinates.
      */
-    void push_vertex(glm::vec3 pos, float lighting, glm::vec2 uv);
+    void push_vertex(glm::ivec3 pos, float lighting, glm::vec2 uv);
 
     /**
      * @brief Pushes a face into the mesh arrays, in the right direction and accounting for the offsets.
@@ -119,11 +118,11 @@ class Chunk {
     bool hasBeenModified = false;
 
    private:
-    std::vector<float> vp{};
+    std::vector<GLuint> vp{};
     std::vector<float> vn{};
     std::vector<float> vuv{};
 
-    glm::vec3 world_offset{};
+    glm::ivec3 world_offset{};
     glm::vec2 tex_offset{};
     glm::vec2 tex_size{1, 1};
 
