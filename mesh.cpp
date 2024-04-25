@@ -60,7 +60,6 @@ void Mesh::setGPUGeometry(GLuint posVbo, GLuint normalVbo, GLuint uvVbo, GLuint 
 void Mesh::render() const {
     glBindVertexArray(m_vao);
     glDrawArrays(GL_TRIANGLES, 0, m_numIndices);
-    glBindVertexArray(0);
 }
 
 Mesh::~Mesh() {
