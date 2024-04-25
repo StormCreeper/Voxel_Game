@@ -76,6 +76,13 @@ class CubeMap {
         glBindVertexArray(0);
 
         numIndices = vertexPositions.size() / 3;
+
+        glActiveTexture(GL_TEXTURE1);
+        texture->bind();
+        glActiveTexture(GL_TEXTURE0);
+
+        glUseProgram(program);
+        setUniform(program, "u_texture", 1);
     }
 
     ~CubeMap() {
@@ -89,14 +96,8 @@ class CubeMap {
         setUniform(program, "u_viewMat", glm::mat4(glm::mat3(viewMatrix)));
         setUniform(program, "u_projMat", projMatrix);
 
-        setUniform(program, "u_texture", 0);
-
-        glActiveTexture(GL_TEXTURE0);
-        texture->bind();
-
         glBindVertexArray(vao);
         glDrawArrays(GL_TRIANGLES, 0, numIndices);
-        glBindVertexArray(0);
 
         glDepthMask(GL_TRUE);
     }

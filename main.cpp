@@ -27,6 +27,9 @@ Camera g_camera{};
 
 ChunkManager g_chunkManager{};
 
+glm::mat4 g_viewMatrix;
+glm::mat4 g_projMatrix;
+
 int g_tool = 1;
 
 // Executed each time the window is resized. Adjust the aspect ratio and the rendering viewport to the current window.
@@ -35,6 +38,8 @@ void window_size_callback(GLFWwindow *window, int width, int height) {
     glViewport(0, 0, (GLint)width, (GLint)height);  // Dimension of the rendering region in the window
 
     g_camera.set_screen_center(glm::vec2(width / 2, height / 2));
+
+    g_projMatrix = g_camera.compute_projection_matrix();
 }
 
 bool shiftPressed = false;
@@ -207,6 +212,16 @@ void init() {
     initScene();
 
     last_time = glfwGetTime();
+
+    BlockPalette::bind_texture(g_program);
+
+    glUseProgram(g_program);
+
+    setUniform(g_program, "u_texture", 0);
+
+    setUniform(g_program, "u_chunkSize", Chunk::chunk_size);
+
+    g_projMatrix = g_camera.compute_projection_matrix();
 }
 
 /*
@@ -216,8 +231,8 @@ Perfs :
      Moving = 19 fps
 
     Plugged:
-     Still = 815 fps -> 3000 fps
-     Moving = 70 fps
+     Still = 815 fps -> 3000 fps -> 3550 fps
+     Moving = 31 fps
 */
 
 void render() {
@@ -236,22 +251,17 @@ void render() {
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    const glm::mat4 viewMatrix = g_camera.compute_view_matrix();
-    const glm::mat4 projMatrix = g_camera.compute_projection_matrix();
+    g_viewMatrix = g_camera.compute_view_matrix();
 
     // Render stars
 
-    g_cubeMap->render(projMatrix, viewMatrix);
+    g_cubeMap->render(g_projMatrix, g_viewMatrix);
 
     // Render the rest
 
     glUseProgram(g_program);
 
-    setUniform(g_program, "u_viewProjMat", projMatrix * viewMatrix);
-
-    setUniform(g_program, "u_texture", 0);
-
-    setUniform(g_program, "u_chunkSize", Chunk::chunk_size);
+    setUniform(g_program, "u_viewProjMat", g_projMatrix * g_viewMatrix);
 
     g_chunkManager.renderAll(g_program, g_camera);
 }

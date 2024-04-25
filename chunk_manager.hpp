@@ -150,8 +150,6 @@ class ChunkManager {
         glm::vec3 cam_target = camera.get_target();
         glm::vec2 cam_dir = glm::normalize(glm::vec2(cam_target.x - cam_pos.x, cam_target.z - cam_pos.z));
 
-        BlockPalette::bind_texture(program);
-
         for (const auto& [pos, chunk] : chunks) {
             if (isInFrustrum(pos, cam_pos, cam_dir, glm::radians(180.f)))
                 chunk->render(program);
