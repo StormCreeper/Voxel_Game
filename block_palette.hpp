@@ -8,6 +8,8 @@
 #include <vector>
 #include <memory>
 
+#include <fstream>
+
 /// @brief Represents the direction of a face of a cube
 enum DIR {
     UP,
@@ -30,17 +32,27 @@ class BlockPalette {
     static inline std::shared_ptr<Texture> texture{};
 
     static void init_block_descs() {
-        block_descs.push_back({{0, 0, 0, 0, 0, 0}});
-        block_descs.push_back({{4, 4, 4, 4, 4, 4}});
-        block_descs.push_back({{1, 1, 1, 1, 1, 1}});
-        block_descs.push_back({{3, 1, 2, 2, 2, 2}});
-        block_descs.push_back({{7, 7, 7, 7, 7, 7}});
-        block_descs.push_back({{6, 6, 5, 5, 5, 5}});
-        block_descs.push_back({{8, 8, 8, 8, 8, 8}});
-        block_descs.push_back({{11, 11, 10, 10, 9, 10}});
-        block_descs.push_back({{12, 12, 12, 12, 12, 12}});
-
         texture = std::make_shared<Texture>("../resources/media/atlas.png");
+
+        block_descs.push_back({{0, 0, 0, 0, 0, 0}});
+
+        std::ifstream file;
+        file.open("../resources/blocks/block_desc.txt");
+        if (!file.is_open()) {
+            std::cout << "Couldn't open block description file :(" << std::endl;
+            return;
+        }
+
+        int faces[6];
+        while (file) {
+            for (int i = 0; i < 6; i++)
+                file >> faces[i];
+
+            block_descs.push_back({});
+
+            std::copy(faces, faces + 6,
+                      block_descs[block_descs.size() - 1].face_indices);
+        }
     }
 
     /// @brief Gets a block description in the palette
