@@ -17,6 +17,7 @@ set(SOURCES
   texture.cpp
   chunk.cpp
   world_builder.cpp
+  thread_pool.cpp
 
   camera.hpp
   mesh.hpp
@@ -28,6 +29,7 @@ set(SOURCES
   world_builder.hpp
   block_palette.hpp
   debug.hpp
+  thread_pool.hpp
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES})
