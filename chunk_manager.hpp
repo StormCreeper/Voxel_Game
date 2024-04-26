@@ -36,6 +36,14 @@ class ChunkManager {
         saveChunks();
     }
 
+    glm::vec2 chunk_center(glm::ivec2 chunk_pos) {
+        return (glm::vec2(chunk_pos) + glm::vec2(0.5, 0.5)) * glm::vec2(Chunk::chunk_size.x, Chunk::chunk_size.z);
+    }
+
+    float chunk_distance(glm::ivec2 chunk_pos, glm::vec3 cam_pos) {
+        return glm::length(glm::vec2(cam_pos.x, cam_pos.z) - chunk_center(chunk_pos));
+    }
+
     void updateQueue(glm::vec3 worldPosition) {
         for (int i = -chunk_load_distance; i <= chunk_load_distance; i++) {
             for (int j = -chunk_load_distance; j <= chunk_load_distance; j++) {
@@ -58,7 +66,7 @@ class ChunkManager {
         auto it = chunks.begin();
         while (it != chunks.end()) {
             glm::ivec2 chunk_pos = it->first;
-            float dist = glm::length(glm::vec2(cam_pos.x, cam_pos.z) - (glm::vec2(chunk_pos) + glm::vec2(0.5, 0.5)) * glm::vec2(Chunk::chunk_size.x, Chunk::chunk_size.z));
+            float dist = chunk_distance(chunk_pos, cam_pos);
             if (dist >= chunk_unload_distance * Chunk::chunk_size.x) {
                 auto tmp_it = it;
                 ++it;
@@ -87,7 +95,7 @@ class ChunkManager {
             chunk_pos = taskQueue.front();
             taskQueue.pop_front();
 
-            float dist = glm::length(glm::vec2(cam_pos.x, cam_pos.z) - (glm::vec2(chunk_pos) + glm::vec2(0.5, 0.5)) * glm::vec2(Chunk::chunk_size.x, Chunk::chunk_size.z));
+            float dist = chunk_distance(chunk_pos, cam_pos);
             if (dist >= chunk_unload_distance * Chunk::chunk_size.x) continue;
 
             if (chunks.find(chunk_pos) == chunks.end()) found_one = true;
@@ -111,7 +119,6 @@ class ChunkManager {
         regenerateOneChunkMesh(chunk_pos + glm::ivec2(-1, 0));
         regenerateOneChunkMesh(chunk_pos + glm::ivec2(0, 1));
         regenerateOneChunkMesh(chunk_pos + glm::ivec2(0, -1));
-        // TODO
     }
 
     void reloadChunks() {
@@ -126,25 +133,32 @@ class ChunkManager {
         }
     }
 
-    /// @brief 2D Frustum culling
-    bool isInFrustrum(glm::ivec2 chunk_pos, glm::vec3 cam_pos, glm::vec2 dir, float fov) {
-        float dist = glm::length(glm::vec2(cam_pos.x, cam_pos.z) - (glm::vec2(chunk_pos) + glm::vec2(0.5, 0.5)) * glm::vec2(Chunk::chunk_size.x, Chunk::chunk_size.z));
-        if (dist >= chunk_view_distance * Chunk::chunk_size.x) return false;
-        glm::vec2 cam_right = glm::normalize(glm::vec2(dir.y, -dir.x));
-
-        glm::vec2 chunk_center = (glm::vec2(chunk_pos) + glm::vec2(0.5, 0.5)) * glm::vec2(Chunk::chunk_size.x, Chunk::chunk_size.z);
-        glm::vec2 chunk_center_front = chunk_center + dir * (float)(Chunk::chunk_size.x * sqrt(2));
-
-        glm::vec2 cam_center = glm::vec2(cam_pos.x, cam_pos.z);
-
-        glm::vec2 chunk_dir_front = chunk_center_front - cam_center;
-
-        float angle_front = atan2(dir.x * chunk_dir_front.y - dir.y * chunk_dir_front.x, dir.x * chunk_dir_front.x + dir.y * chunk_dir_front.y);
-
-        return abs(angle_front) < fov / 2.0f;  // || abs(angle_max) < fov / 2.0f || abs(angle_min + angle_max) / 2.0f < fov / 2.0f;
+    /**
+     * @brief Calculates the angle between two 2D vectors.
+     *
+     * @param v1 The first vector.
+     * @param v2 The second vector.
+     * @return The angle between the vectors in radians.
+     */
+    float calculateAngle(glm::vec2 v1, glm::vec2 v2) {
+        return atan2(v1.x * v2.y - v1.y * v2.x, v1.x * v2.x + v1.y * v2.y);
     }
 
-    /// @todo project cam pos and dir to do 3D frustum culling using 2D
+    /// @brief 2D Frustum culling
+    bool isInFrustrum(glm::ivec2 chunk_pos, glm::vec3 cam_pos, glm::vec2 cam_dir, float fov) {
+        if (chunk_distance(chunk_pos, cam_pos) >= chunk_view_distance * Chunk::chunk_size.x)
+            return false;
+
+        glm::vec2 chunk_center_front = chunk_center(chunk_pos) + cam_dir * (float)(Chunk::chunk_size.x * sqrt(2));
+
+        glm::vec2 chunk_dir = chunk_center_front - glm::vec2(cam_pos.x, cam_pos.z);
+
+        float angle_front = calculateAngle(cam_dir, chunk_dir);
+
+        return abs(angle_front) < fov / 2.0f;
+    }
+
+    /// @todo project cam pos and cam_dir to do 3D frustum culling using 2D
     void renderAll(GLuint program, Camera& camera) {
         glm::vec3 cam_pos = camera.get_position();
         glm::vec3 cam_target = camera.get_target();
@@ -191,7 +205,6 @@ class ChunkManager {
         myfile.open(ss.str(), std::ios::binary);
 
         if (!myfile.is_open()) {
-            // std::cerr << "Chunk file doesn't exist :(\n";
             return nullptr;
         }
 
@@ -202,8 +215,6 @@ class ChunkManager {
         myfile.read((char*)chunk->voxelMap, size);
 
         myfile.close();
-
-        // std::cout << "Loaded chunk :D\n";
 
         return chunk;
     }
@@ -217,9 +228,6 @@ class ChunkManager {
             floor(world_pos.z / (float)Chunk::chunk_size.z));
 
         glm::ivec2 chunk_coords = glm::ivec2(world_pos.x, world_pos.z) - chunk_pos * glm::ivec2(Chunk::chunk_size.x, Chunk::chunk_size.z);
-
-        if (chunk_coords.x < 0 || chunk_coords.x >= Chunk::chunk_size.x || chunk_coords.y < 0 || chunk_coords.y >= Chunk::chunk_size.z)
-            std::cout << "(" << chunk_pos.x << ", " << chunk_pos.y << ", " << chunk_coords.x << ", " << chunk_coords.y << ")\n";
 
         if (auto search = chunks.find(chunk_pos); search != chunks.end()) {
             return search->second->getBlock({chunk_coords.x, world_pos.y, chunk_coords.y}, false);
@@ -237,9 +245,6 @@ class ChunkManager {
             floor(world_pos.z / (float)Chunk::chunk_size.z));
 
         glm::ivec2 chunk_coords = glm::ivec2(world_pos.x, world_pos.z) - chunk_pos * glm::ivec2(Chunk::chunk_size.x, Chunk::chunk_size.z);
-
-        if (chunk_coords.x < 0 || chunk_coords.x >= Chunk::chunk_size.x || chunk_coords.y < 0 || chunk_coords.y >= Chunk::chunk_size.z)
-            std::cout << "(" << chunk_pos.x << ", " << chunk_pos.y << ", " << chunk_coords.x << ", " << chunk_coords.y << ")\n";
 
         if (auto search = chunks.find(chunk_pos); search != chunks.end()) {
             search->second->setBlock({chunk_coords.x, world_pos.y, chunk_coords.y}, block);
