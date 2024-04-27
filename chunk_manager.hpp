@@ -44,12 +44,13 @@ class ChunkManager {
         return glm::length(glm::vec2(cam_pos.x, cam_pos.z) - chunk_center(chunk_pos));
     }
 
-    void updateQueue(glm::vec3 worldPosition) {
-        for (int i = -chunk_load_distance; i <= chunk_load_distance; i++) {
-            for (int j = -chunk_load_distance; j <= chunk_load_distance; j++) {
-                glm::ivec2 chunk_pos = glm::ivec2(i, j) + glm::ivec2((worldPosition.x - Chunk::chunk_size.x / 2) / Chunk::chunk_size.x, (worldPosition.z - Chunk::chunk_size.z / 2) / Chunk::chunk_size.z);
-                float dist = glm::length(glm::vec2(worldPosition.x, worldPosition.z) - (glm::vec2(chunk_pos) + glm::vec2(0.5, 0.5)) * glm::vec2(Chunk::chunk_size.x, Chunk::chunk_size.z));
-                if (dist >= chunk_load_distance * Chunk::chunk_size.x) continue;
+    void updateQueue(glm::vec3 world_pos) {
+        glm::ivec2 chunk_pos_center = glm::ivec2((world_pos.x - Chunk::chunk_size.x / 2) / Chunk::chunk_size.x, (world_pos.z - Chunk::chunk_size.z / 2) / Chunk::chunk_size.z);
+        for (int i = -load_distance; i <= load_distance; i++) {
+            for (int j = -load_distance; j <= load_distance; j++) {
+                glm::ivec2 chunk_pos = glm::ivec2(i, j) + chunk_pos_center;
+                float dist = chunk_distance(chunk_pos, world_pos);
+                if (dist >= load_distance * Chunk::chunk_size.x) continue;
 
                 if (std::find(taskQueue.begin(), taskQueue.end(), chunk_pos) == taskQueue.end())
                     if (chunks.find(chunk_pos) == chunks.end()) {
@@ -58,7 +59,7 @@ class ChunkManager {
             }
         }
 
-        cmpChunkPosOrigin::center = glm::vec2(worldPosition.x, worldPosition.z);
+        cmpChunkPosOrigin::center = glm::vec2(world_pos.x, world_pos.z);
         std::sort(taskQueue.begin(), taskQueue.end(), cmpChunkPosOrigin());
     }
 
@@ -67,7 +68,7 @@ class ChunkManager {
         while (it != chunks.end()) {
             glm::ivec2 chunk_pos = it->first;
             float dist = chunk_distance(chunk_pos, cam_pos);
-            if (dist >= chunk_unload_distance * Chunk::chunk_size.x) {
+            if (dist >= unload_distance * Chunk::chunk_size.x) {
                 auto tmp_it = it;
                 ++it;
                 if (tmp_it->second->hasBeenModified) {
@@ -96,10 +97,12 @@ class ChunkManager {
             taskQueue.pop_front();
 
             float dist = chunk_distance(chunk_pos, cam_pos);
-            if (dist >= chunk_unload_distance * Chunk::chunk_size.x) continue;
+            if (dist >= unload_distance * Chunk::chunk_size.x) continue;
 
             if (chunks.find(chunk_pos) == chunks.end()) found_one = true;
         }
+
+        std::cout << "Load or generate one chunk at (" << chunk_pos.x << ", " << chunk_pos.y << ")\n";
 
         auto chunk = deserializeChunk(chunk_pos);
 
@@ -146,7 +149,7 @@ class ChunkManager {
 
     /// @brief 2D Frustum culling
     bool isInFrustrum(glm::ivec2 chunk_pos, glm::vec3 cam_pos, glm::vec2 cam_dir, float fov) {
-        if (chunk_distance(chunk_pos, cam_pos) >= chunk_view_distance * Chunk::chunk_size.x)
+        if (chunk_distance(chunk_pos, cam_pos) >= view_distance * Chunk::chunk_size.x)
             return false;
 
         glm::vec2 chunk_center_front = chunk_center(chunk_pos) + cam_dir * (float)(Chunk::chunk_size.x * sqrt(2));
@@ -342,9 +345,9 @@ class ChunkManager {
 
    private:
     std::deque<glm::ivec2> taskQueue{};
-    int chunk_view_distance = 5;
-    int chunk_load_distance = 7;
-    int chunk_unload_distance = 10;
+    int view_distance = 5;
+    int load_distance = 7;
+    int unload_distance = 10;
 };
 
 #endif  // CHUNK_MANAGER_HPP
