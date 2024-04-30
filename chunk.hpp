@@ -1,6 +1,8 @@
 #ifndef CHUNK_HPP
 #define CHUNK_HPP
 
+#include <mutex>
+
 #include "mesh.hpp"
 #include <iostream>
 #include "block_palette.hpp"
@@ -14,6 +16,9 @@ class Chunk {
    public:
     static const glm::ivec3 chunk_size;
     static std::shared_ptr<Texture> chunk_texture;
+
+    bool ready = false;
+    bool meshGenerated = false;
 
     static void init_chunks() {
         BlockPalette::init_block_descs();
@@ -32,6 +37,8 @@ class Chunk {
         this->modelMatrix = glm::translate(modelMatrix, glm::vec3(pos.x * chunk_size.x, 0, pos.y * chunk_size.z));
 
         mesh->genBuffers();
+
+        std::cout << "Init chunk at (" << pos.x << ", " << pos.y << ")\n";
     }
 
     /// @brief Destructor for Chunk class.
@@ -44,7 +51,7 @@ class Chunk {
 
     /// @brief Allocates memory for the chunk's voxel data
     void allocate() {
-        voxelMap = (uint8_t *)malloc(chunk_size.x * chunk_size.y * chunk_size.z * sizeof(uint8_t));
+        voxelMap = (uint8_t *)realloc(voxelMap, chunk_size.x * chunk_size.y * chunk_size.z * sizeof(uint8_t));
         if (!voxelMap) {
             std::cout << "NOOOOOOO no room left :( youre computer is ded :(\n";
             exit(-1);
@@ -83,9 +90,27 @@ class Chunk {
      * @brief Renders the chunk
      * @param program the shader program id
      */
-    void render(GLuint program) const {
+    void render(GLuint program) {
+        if (!meshGenerated) {
+            build_mesh();
+            meshGenerated = true;
+        }
         setUniform(program, "u_chunkPos", glm::ivec3(pos.x, 0, pos.y));
         mesh->render();
+    }
+
+    bool is_ready() {
+        bool r;
+        mutex.lock();
+        r = ready;
+        mutex.unlock();
+        return r;
+    }
+
+    void set_ready(bool r) {
+        mutex.lock();
+        ready = r;
+        mutex.unlock();
     }
 
    private:
@@ -116,6 +141,8 @@ class Chunk {
    public:
     uint8_t *voxelMap{};
     bool hasBeenModified = false;
+    std::mutex mutex{};
+    glm::ivec2 pos{};
 
    private:
     std::vector<GLuint> vp{};
@@ -125,8 +152,6 @@ class Chunk {
     glm::ivec3 world_offset{};
     glm::vec2 tex_offset{};
     glm::vec2 tex_size{1, 1};
-
-    glm::ivec2 pos{};
 
     bool allocated = false;
     ChunkManager *chunk_manager;

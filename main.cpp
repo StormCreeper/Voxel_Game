@@ -61,12 +61,6 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         if (key == GLFW_KEY_LEFT_SHIFT)
             shiftPressed = true;
 
-        if (key == GLFW_KEY_P) {
-            g_chunkManager.serializeChunk(glm::ivec2(0, 0));
-        }
-        if (key == GLFW_KEY_O) {
-            g_chunkManager.chunks.insert_or_assign(glm::ivec2(0, 0), g_chunkManager.deserializeChunk(glm::ivec2(0, 0)));
-        }
         if (key == GLFW_KEY_R) {
             g_chunkManager.reloadChunks();
         }

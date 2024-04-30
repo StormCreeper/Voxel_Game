@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <fstream>
 #include <sstream>
+#include <mutex>
 
 struct cmpChunkPos {
     inline bool operator()(const glm::ivec2& a, const glm::ivec2& b) const {
@@ -21,9 +22,9 @@ struct cmpChunkPos {
 struct cmpChunkPosOrigin {
     static inline glm::vec2 center{};
 
-    inline bool operator()(const glm::ivec2& a, const glm::ivec2& b) {
-        glm::vec2 diff_a = center - (glm::vec2(a) + glm::vec2(0.5, 0.5)) * glm::vec2(Chunk::chunk_size.x, Chunk::chunk_size.z);
-        glm::vec2 diff_b = center - (glm::vec2(b) + glm::vec2(0.5, 0.5)) * glm::vec2(Chunk::chunk_size.x, Chunk::chunk_size.z);
+    inline bool operator()(const std::shared_ptr<Chunk>& a, const std::shared_ptr<Chunk>& b) {
+        glm::vec2 diff_a = center - (glm::vec2(a->pos) + glm::vec2(0.5, 0.5)) * glm::vec2(Chunk::chunk_size.x, Chunk::chunk_size.z);
+        glm::vec2 diff_b = center - (glm::vec2(b->pos) + glm::vec2(0.5, 0.5)) * glm::vec2(Chunk::chunk_size.x, Chunk::chunk_size.z);
 
         return glm::length(diff_a) < glm::length(diff_b);
     }
@@ -52,10 +53,15 @@ class ChunkManager {
                 float dist = chunk_distance(chunk_pos, world_pos);
                 if (dist >= load_distance * Chunk::chunk_size.x) continue;
 
-                if (std::find(taskQueue.begin(), taskQueue.end(), chunk_pos) == taskQueue.end())
-                    if (chunks.find(chunk_pos) == chunks.end()) {
-                        taskQueue.push_front(chunk_pos);
-                    }
+                map_mutex.lock();
+                std::shared_ptr<Chunk> chunk{};
+                auto it = chunks.find(chunk_pos);
+                if (it == chunks.end()) {
+                    chunk = std::make_shared<Chunk>(chunk_pos, this);
+                    chunks.insert_or_assign(chunk_pos, chunk);
+                    taskQueue.push_front(chunk);
+                }
+                map_mutex.unlock();
             }
         }
 
@@ -64,6 +70,7 @@ class ChunkManager {
     }
 
     void unloadUselessChunks(glm::vec3 cam_pos) {
+        map_mutex.lock();
         auto it = chunks.begin();
         while (it != chunks.end()) {
             glm::ivec2 chunk_pos = it->first;
@@ -78,36 +85,45 @@ class ChunkManager {
             } else
                 ++it;
         }
+        map_mutex.unlock();
     }
 
     void regenerateOneChunkMesh(glm::ivec2 chunk_pos) {
+        map_mutex.lock();
         if (auto search = chunks.find(chunk_pos); search != chunks.end()) {
-            search->second->build_mesh();
+            search->second->meshGenerated = false;
         }
+        map_mutex.unlock();
+    }
+
+    std::shared_ptr<Chunk> getChunkFromQueue(glm::ivec3 cam_pos) {
+        bool found_one = false;
+        std::shared_ptr<Chunk> chunk{};
+
+        while (!found_one) {
+            if (taskQueue.empty()) return nullptr;
+
+            chunk = taskQueue.front();
+            taskQueue.pop_front();
+
+            float dist = chunk_distance(chunk->pos, cam_pos);
+            if (dist >= unload_distance * Chunk::chunk_size.x) continue;
+
+            map_mutex.lock();
+            if (chunks.find(chunk->pos) != chunks.end()) found_one = true;
+            map_mutex.unlock();
+        }
+
+        return chunk;
     }
 
     void generateOrLoadOneChunk(glm::vec3 cam_pos) {
-        glm::ivec2 chunk_pos{};
-        bool found_one = false;
+        auto chunk = getChunkFromQueue(cam_pos);
+        if (!chunk) return;
 
-        while (!found_one) {
-            if (taskQueue.empty()) return;
+        std::cout << "Load or generate one chunk at (" << chunk->pos.x << ", " << chunk->pos.y << ")\n";
 
-            chunk_pos = taskQueue.front();
-            taskQueue.pop_front();
-
-            float dist = chunk_distance(chunk_pos, cam_pos);
-            if (dist >= unload_distance * Chunk::chunk_size.x) continue;
-
-            if (chunks.find(chunk_pos) == chunks.end()) found_one = true;
-        }
-
-        std::cout << "Load or generate one chunk at (" << chunk_pos.x << ", " << chunk_pos.y << ")\n";
-
-        auto chunk = deserializeChunk(chunk_pos);
-
-        if (!chunk) {
-            chunk = std::shared_ptr<Chunk>(new Chunk(chunk_pos, this));
+        if (!deserializeChunk(chunk)) {
             if (chunk) {
                 chunk->voxel_map_from_noise();
             } else {
@@ -115,25 +131,29 @@ class ChunkManager {
                 exit(-1);
             }
         }
-        chunk->build_mesh();
-        chunks.insert_or_assign(chunk_pos, chunk);
+        chunk->meshGenerated = false;
+        chunk->set_ready(true);
 
-        regenerateOneChunkMesh(chunk_pos + glm::ivec2(1, 0));
-        regenerateOneChunkMesh(chunk_pos + glm::ivec2(-1, 0));
-        regenerateOneChunkMesh(chunk_pos + glm::ivec2(0, 1));
-        regenerateOneChunkMesh(chunk_pos + glm::ivec2(0, -1));
+        regenerateOneChunkMesh(chunk->pos + glm::ivec2(1, 0));
+        regenerateOneChunkMesh(chunk->pos + glm::ivec2(-1, 0));
+        regenerateOneChunkMesh(chunk->pos + glm::ivec2(0, 1));
+        regenerateOneChunkMesh(chunk->pos + glm::ivec2(0, -1));
     }
 
     void reloadChunks() {
+        map_mutex.lock();
         chunks.clear();
+        map_mutex.unlock();
         std::cout << "Cleared all chunks\n";
     }
 
     void saveChunks() {
+        map_mutex.lock();
         for (const auto& [pos, chunk] : chunks) {
-            if (chunk->hasBeenModified)
+            if (chunk->is_ready() && chunk->hasBeenModified)
                 serializeChunk(pos);
         }
+        map_mutex.unlock();
     }
 
     /**
@@ -167,10 +187,15 @@ class ChunkManager {
         glm::vec3 cam_target = camera.get_target();
         glm::vec2 cam_dir = glm::normalize(glm::vec2(cam_target.x - cam_pos.x, cam_target.z - cam_pos.z));
 
+        map_mutex.lock();
         for (const auto& [pos, chunk] : chunks) {
-            if (isInFrustrum(pos, cam_pos, cam_dir, glm::radians(180.f)))
+            if (chunk->is_ready() && isInFrustrum(pos, cam_pos, cam_dir, glm::radians(180.f))) {
+                map_mutex.unlock();
                 chunk->render(program);
+                map_mutex.lock();
+            }
         }
+        map_mutex.unlock();
     }
 
     /// @brief Saves a chunk to a save file by just dumping the voxel data in binary mode
@@ -197,29 +222,25 @@ class ChunkManager {
         }
     }
 
-    /// @brief Loads a chunk from a binary file
-    /// @param chunk_pos the pos of the chunk to load
-    /// @return The created chunk
-    std::shared_ptr<Chunk> deserializeChunk(glm::ivec2 chunk_pos) {
+    bool deserializeChunk(std::shared_ptr<Chunk> chunk) {
         std::stringstream ss{};
-        ss << "../map_data/" << chunk_pos.x << "." << chunk_pos.y << ".txt";
+        ss << "../map_data/" << chunk->pos.x << "." << chunk->pos.y << ".txt";
 
         std::ifstream myfile;
         myfile.open(ss.str(), std::ios::binary);
 
         if (!myfile.is_open()) {
-            return nullptr;
+            return false;
         }
 
         size_t size = Chunk::chunk_size.x * Chunk::chunk_size.y * Chunk::chunk_size.z * sizeof(char);
 
-        auto chunk = std::make_shared<Chunk>(chunk_pos, this);
         chunk->allocate();
         myfile.read((char*)chunk->voxelMap, size);
 
         myfile.close();
 
-        return chunk;
+        return true;
     }
 
     /// @brief Gets a block in world space -> chooses the right chunk and right offset
@@ -232,7 +253,12 @@ class ChunkManager {
 
         glm::ivec2 chunk_coords = glm::ivec2(world_pos.x, world_pos.z) - chunk_pos * glm::ivec2(Chunk::chunk_size.x, Chunk::chunk_size.z);
 
-        if (auto search = chunks.find(chunk_pos); search != chunks.end()) {
+        map_mutex.lock();
+        auto search = chunks.find(chunk_pos);
+        auto end = chunks.end();
+        map_mutex.unlock();
+
+        if (search != end) {
             return search->second->getBlock({chunk_coords.x, world_pos.y, chunk_coords.y}, false);
         } else
             return 0;
@@ -249,7 +275,12 @@ class ChunkManager {
 
         glm::ivec2 chunk_coords = glm::ivec2(world_pos.x, world_pos.z) - chunk_pos * glm::ivec2(Chunk::chunk_size.x, Chunk::chunk_size.z);
 
-        if (auto search = chunks.find(chunk_pos); search != chunks.end()) {
+        map_mutex.lock();
+        auto search = chunks.find(chunk_pos);
+        auto end = chunks.end();
+        map_mutex.unlock();
+
+        if (search != end) {
             search->second->setBlock({chunk_coords.x, world_pos.y, chunk_coords.y}, block);
             if (rebuild) {
                 search->second->build_mesh();
@@ -342,9 +373,10 @@ class ChunkManager {
     }
 
     std::map<glm::ivec2, std::shared_ptr<Chunk>, cmpChunkPos> chunks{};
+    std::mutex map_mutex{};
 
    private:
-    std::deque<glm::ivec2> taskQueue{};
+    std::deque<std::shared_ptr<Chunk>> taskQueue{};
     int view_distance = 5;
     int load_distance = 7;
     int unload_distance = 10;
