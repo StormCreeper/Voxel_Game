@@ -18,6 +18,7 @@ set(SOURCES
   chunk.cpp
   world_builder.cpp
   thread_pool.cpp
+  chunk_manager.cpp
 
   camera.hpp
   mesh.hpp
