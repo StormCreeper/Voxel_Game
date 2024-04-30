@@ -37,11 +37,11 @@ class ChunkManager {
         saveChunks();
     }
 
-    glm::vec2 chunk_center(glm::ivec2 chunk_pos) {
+    inline glm::vec2 chunk_center(glm::ivec2 chunk_pos) {
         return (glm::vec2(chunk_pos) + glm::vec2(0.5, 0.5)) * glm::vec2(Chunk::chunk_size.x, Chunk::chunk_size.z);
     }
 
-    float chunk_distance(glm::ivec2 chunk_pos, glm::vec3 cam_pos) {
+    inline float chunk_distance(glm::ivec2 chunk_pos, glm::vec3 cam_pos) {
         return glm::length(glm::vec2(cam_pos.x, cam_pos.z) - chunk_center(chunk_pos));
     }
 
@@ -97,6 +97,7 @@ class ChunkManager {
 
     std::map<glm::ivec2, std::shared_ptr<Chunk>, cmpChunkPos> chunks{};
     std::mutex map_mutex{};
+    std::mutex queue_mutex{};
 
    private:
     std::deque<std::shared_ptr<Chunk>> taskQueue{};

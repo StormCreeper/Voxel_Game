@@ -14,14 +14,18 @@ void ChunkManager::updateQueue(glm::vec3 world_pos) {
             if (it == chunks.end()) {
                 chunk = std::make_shared<Chunk>(chunk_pos, this);
                 chunks.insert_or_assign(chunk_pos, chunk);
+                queue_mutex.lock();
                 taskQueue.push_front(chunk);
+                queue_mutex.unlock();
             }
             map_mutex.unlock();
         }
     }
 
     cmpChunkPosOrigin::center = glm::vec2(world_pos.x, world_pos.z);
+    queue_mutex.lock();
     std::sort(taskQueue.begin(), taskQueue.end(), cmpChunkPosOrigin());
+    queue_mutex.unlock();
 }
 
 void ChunkManager::unloadUselessChunks(glm::vec3 cam_pos) {
@@ -56,10 +60,15 @@ std::shared_ptr<Chunk> ChunkManager::getChunkFromQueue(glm::ivec3 cam_pos) {
     std::shared_ptr<Chunk> chunk{};
 
     while (!found_one) {
-        if (taskQueue.empty()) return nullptr;
+        queue_mutex.lock();
+        if (taskQueue.empty()) {
+            queue_mutex.unlock();
+            return nullptr;
+        }
 
         chunk = taskQueue.front();
         taskQueue.pop_front();
+        queue_mutex.unlock();
 
         float dist = chunk_distance(chunk->pos, cam_pos);
         if (dist >= unload_distance * Chunk::chunk_size.x) continue;
