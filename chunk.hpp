@@ -38,7 +38,7 @@ class Chunk {
 
         mesh->genBuffers();
 
-        std::cout << "Init chunk at (" << pos.x << ", " << pos.y << ")\n";
+        // std::cout << "Init chunk at (" << pos.x << ", " << pos.y << ")\n";
     }
 
     /// @brief Destructor for Chunk class.
@@ -64,7 +64,7 @@ class Chunk {
     void free_mem() {
         if (voxelMap)
             free(voxelMap);
-        std::cout << "Freed chunk at (" << pos.x << ", " << pos.y << ")\n";
+        // std::cout << "Freed chunk at (" << pos.x << ", " << pos.y << ")\n";
         allocated = false;
     }
 

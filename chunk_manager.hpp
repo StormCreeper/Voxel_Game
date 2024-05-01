@@ -11,6 +11,8 @@
 #include <fstream>
 #include <sstream>
 #include <mutex>
+#include <condition_variable>
+#include <thread>
 
 struct cmpChunkPos {
     inline bool operator()(const glm::ivec2& a, const glm::ivec2& b) const {
@@ -32,28 +34,45 @@ struct cmpChunkPosOrigin {
 
 class ChunkManager {
    public:
-    ChunkManager() {}
+    ChunkManager() {
+        const uint32_t num_threads = 1;  // Max # of threads the system supports
+        for (uint32_t ii = 0; ii < num_threads; ++ii) {
+            threads.emplace_back(std::thread(&ChunkManager::ThreadLoop, this));
+        }
+    }
     ~ChunkManager() {
+        {
+            std::unique_lock<std::mutex> lock(queue_mutex);
+            should_terminate = true;
+        }
+        mutex_condition.notify_all();
+        for (std::thread& active_thread : threads) {
+            active_thread.join();
+        }
+        threads.clear();
+
         saveChunks();
     }
+
+    void ThreadLoop();
 
     inline glm::vec2 chunk_center(glm::ivec2 chunk_pos) {
         return (glm::vec2(chunk_pos) + glm::vec2(0.5, 0.5)) * glm::vec2(Chunk::chunk_size.x, Chunk::chunk_size.z);
     }
 
-    inline float chunk_distance(glm::ivec2 chunk_pos, glm::vec3 cam_pos) {
+    inline float chunk_distance(glm::ivec2 chunk_pos) {
         return glm::length(glm::vec2(cam_pos.x, cam_pos.z) - chunk_center(chunk_pos));
     }
 
     void updateQueue(glm::vec3 world_pos);
 
-    void unloadUselessChunks(glm::vec3 cam_pos);
+    void unloadUselessChunks();
 
     void regenerateOneChunkMesh(glm::ivec2 chunk_pos);
 
-    std::shared_ptr<Chunk> getChunkFromQueue(glm::ivec3 cam_pos);
+    std::shared_ptr<Chunk> getChunkFromQueue();
 
-    void generateOrLoadOneChunk(glm::vec3 cam_pos);
+    void generateOrLoadOneChunk();
 
     void reloadChunks();
 
@@ -71,7 +90,7 @@ class ChunkManager {
     }
 
     /// @brief 2D Frustum culling
-    bool isInFrustrum(glm::ivec2 chunk_pos, glm::vec3 cam_pos, glm::vec2 cam_dir, float fov);
+    bool isInFrustrum(glm::ivec2 chunk_pos, glm::vec2 cam_dir, float fov);
 
     /// @todo project cam pos and cam_dir to do 3D frustum culling using 2D
     void renderAll(GLuint program, Camera& camera);
@@ -97,13 +116,21 @@ class ChunkManager {
 
     std::map<glm::ivec2, std::shared_ptr<Chunk>, cmpChunkPos> chunks{};
     std::mutex map_mutex{};
+
     std::mutex queue_mutex{};
+    std::condition_variable mutex_condition{};
+    std::vector<std::thread> threads;
+    bool should_terminate = false;
+
+    glm::vec3 cam_pos;
 
    private:
-    std::deque<std::shared_ptr<Chunk>> taskQueue{};
-    int view_distance = 5;
-    int load_distance = 7;
-    int unload_distance = 10;
+    std::deque<std::shared_ptr<Chunk>>
+        taskQueue{};
+    bool thread_pool_paused = false;
+    int view_distance = 15;
+    int load_distance = 17;
+    int unload_distance = 20;
 };
 
 #endif  // CHUNK_MANAGER_HPP

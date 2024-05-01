@@ -271,12 +271,14 @@ void update(const float currentTimeInSec) {
     glm::vec3 cam_pos = g_camera.get_position();
 
     g_chunkManager.updateQueue(cam_pos);
-    g_chunkManager.generateOrLoadOneChunk(cam_pos);
+    // g_chunkManager.generateOrLoadOneChunk(cam_pos);
 
-    g_chunkManager.unloadUselessChunks(cam_pos);
+    g_chunkManager.unloadUselessChunks();
 }
 
 void clear() {
+    g_chunkManager.reloadChunks();
+
     glDeleteProgram(g_program);
 
     glfwDestroyWindow(g_window);
