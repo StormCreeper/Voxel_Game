@@ -14,7 +14,9 @@ const int tex_num_y = 2;
 
 class Chunk {
    public:
-    static const glm::ivec3 chunk_size;
+    static inline constexpr glm::ivec3 chunk_size = {16, 64, 16};
+    static constexpr inline const int num_blocks = chunk_size.x * chunk_size.y * chunk_size.z;
+
     static std::shared_ptr<Texture> chunk_texture;
 
     bool ready = false;
@@ -49,10 +51,13 @@ class Chunk {
     /// @brief Builds (or rebuilds) the chunk mesh based on the voxel grid
     void build_mesh();
 
+    void generateLightMap();
+
     /// @brief Allocates memory for the chunk's voxel data
     void allocate() {
-        voxelMap = (uint8_t *)realloc(voxelMap, chunk_size.x * chunk_size.y * chunk_size.z * sizeof(uint8_t));
-        if (!voxelMap) {
+        voxelMap = (uint8_t *)realloc(voxelMap, num_blocks * sizeof(uint8_t));
+        lightMap = (uint8_t *)realloc(lightMap, num_blocks * sizeof(uint8_t));
+        if (!voxelMap || !lightMap) {
             std::cout << "NOOOOOOO no room left :( youre computer is ded :(\n";
             exit(-1);
         }
@@ -64,6 +69,8 @@ class Chunk {
     void free_mem() {
         if (voxelMap)
             free(voxelMap);
+        if (lightMap)
+            free(lightMap);
         // std::cout << "Freed chunk at (" << pos.x << ", " << pos.y << ")\n";
         allocated = false;
     }
@@ -85,6 +92,8 @@ class Chunk {
      * @param block
      */
     void setBlock(glm::ivec3 block_pos, uint8_t block);
+
+    inline uint8_t get_light_value(glm::ivec3 block_pos);
 
     /**
      * @brief Renders the chunk
@@ -129,7 +138,7 @@ class Chunk {
      * @param norm Vertex normal.
      * @param uv Vertex UV coordinates.
      */
-    void push_vertex(glm::ivec3 pos, float lighting, glm::vec2 uv);
+    void push_vertex(glm::ivec3 pos, glm::vec2 uv);
 
     /**
      * @brief Pushes a face into the mesh arrays, in the right direction and accounting for the offsets.
@@ -149,9 +158,12 @@ class Chunk {
     std::vector<float> vn{};
     std::vector<float> vuv{};
 
+    uint8_t *lightMap{};
+
     glm::ivec3 world_offset{};
     glm::vec2 tex_offset{};
     glm::vec2 tex_size{1, 1};
+    float light_level = 0;
 
     bool allocated = false;
     ChunkManager *chunk_manager;

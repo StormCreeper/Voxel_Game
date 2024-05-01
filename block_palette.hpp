@@ -31,6 +31,17 @@ class BlockPalette {
     static inline std::vector<BlockDesc> block_descs{};
     static inline std::shared_ptr<Texture> texture{};
 
+    static inline glm::ivec3 Normal[] = {
+        {0, 1, 0},
+        {0, -1, 0},
+        {1, 0, 0},
+        {-1, 0, 0},
+        {0, 0, 1},
+        {0, 0, -1}};
+
+    static inline float face_light[] = {
+        1, 0.5, 0.7, 0.8, 0.9, 0.6};
+
     static void init_block_descs() {
         texture = std::make_shared<Texture>("../resources/media/atlas.png");
 
