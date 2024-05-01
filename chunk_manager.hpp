@@ -116,6 +116,7 @@ class ChunkManager {
 
     std::map<glm::ivec2, std::shared_ptr<Chunk>, cmpChunkPos> chunks{};
     std::mutex map_mutex{};
+    std::vector<std::shared_ptr<Chunk>> toDelete{};
 
     std::mutex queue_mutex{};
     std::condition_variable mutex_condition{};

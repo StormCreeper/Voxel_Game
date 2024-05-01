@@ -35,22 +35,38 @@ void ChunkManager::updateQueue(glm::vec3 world_pos) {
 }
 
 void ChunkManager::unloadUselessChunks() {
-    map_mutex.lock();
-    auto it = chunks.begin();
-    while (it != chunks.end()) {
-        glm::ivec2 chunk_pos = it->first;
-        float dist = chunk_distance(chunk_pos);
-        if (dist >= unload_distance * Chunk::chunk_size.x) {
+    {
+        std::unique_lock<std::mutex> lock(map_mutex);
+        auto it = chunks.begin();
+        while (it != chunks.end()) {
+            glm::ivec2 chunk_pos = it->first;
+            float dist = chunk_distance(chunk_pos);
+            if (dist >= unload_distance * Chunk::chunk_size.x) {
+                auto tmp_it = it;
+                ++it;
+                if (tmp_it->second->hasBeenModified) {
+                    serializeChunk(tmp_it->first);
+                }
+                if (!tmp_it->second->is_ready()) {
+                    toDelete.push_back(tmp_it->second);
+                }
+                chunks.erase(tmp_it);
+            } else {
+                ++it;
+            }
+        }
+    }
+
+    auto it = toDelete.begin();
+    while (it != toDelete.end()) {
+        if (it->get()->is_ready()) {
             auto tmp_it = it;
             ++it;
-            if (tmp_it->second->hasBeenModified) {
-                serializeChunk(tmp_it->first);
-            }
-            chunks.erase(tmp_it);
-        } else
+            toDelete.erase(tmp_it);
+        } else {
             ++it;
+        }
     }
-    map_mutex.unlock();
 }
 
 void ChunkManager::regenerateOneChunkMesh(glm::ivec2 chunk_pos) {
@@ -110,13 +126,14 @@ void ChunkManager::ThreadLoop() {
                     exit(-1);
                 }
             }
-            chunk->meshGenerated = false;
-            chunk->set_ready(true);
 
             regenerateOneChunkMesh(chunk->pos + glm::ivec2(1, 0));
             regenerateOneChunkMesh(chunk->pos + glm::ivec2(-1, 0));
             regenerateOneChunkMesh(chunk->pos + glm::ivec2(0, 1));
             regenerateOneChunkMesh(chunk->pos + glm::ivec2(0, -1));
+
+            chunk->meshGenerated = false;
+            chunk->set_ready(true);
         }
     }
 }
@@ -150,6 +167,11 @@ void ChunkManager::reloadChunks() {
     taskQueue.clear();
     queue_mutex.unlock();
     map_mutex.lock();
+    for (auto it : chunks) {
+        if (!it.second->is_ready()) {
+            toDelete.push_back(it.second);
+        }
+    }
     chunks.clear();
     map_mutex.unlock();
 
