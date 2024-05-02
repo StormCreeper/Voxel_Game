@@ -94,7 +94,7 @@ class Chunk {
      */
     void setBlock(glm::ivec3 block_pos, uint8_t block);
 
-    inline uint8_t get_light_value(glm::ivec3 block_pos, bool rec = true);
+    uint8_t get_light_value(glm::ivec3 block_pos, bool rec = true);
 
     inline void set_sky_light(glm::ivec3 block_pos, uint8_t value) {
         if (off_bounds(block_pos)) return;

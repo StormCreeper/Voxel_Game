@@ -280,6 +280,24 @@ uint8_t ChunkManager::getBlock(glm::ivec3 world_pos) {
         return 0;
 }
 
+uint8_t ChunkManager::getLightValue(glm::ivec3 world_pos) {
+    glm::ivec2 chunk_pos = glm::ivec2(
+        floor(world_pos.x / (float)Chunk::chunk_size.x),
+        floor(world_pos.z / (float)Chunk::chunk_size.z));
+
+    glm::ivec2 chunk_coords = glm::ivec2(world_pos.x, world_pos.z) - chunk_pos * glm::ivec2(Chunk::chunk_size.x, Chunk::chunk_size.z);
+
+    map_mutex.lock();
+    auto search = chunks.find(chunk_pos);
+    auto end = chunks.end();
+    map_mutex.unlock();
+
+    if (search != end) {
+        return search->second->get_light_value({chunk_coords.x, world_pos.y, chunk_coords.y}, false);
+    } else
+        return 0;
+}
+
 void ChunkManager::setBlock(glm::ivec3 world_pos, uint8_t block, bool rebuild) {
     glm::ivec2 chunk_pos = glm::ivec2(
         floor(world_pos.x / (float)Chunk::chunk_size.x),

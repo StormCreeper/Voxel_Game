@@ -187,10 +187,13 @@ void Chunk::setBlock(glm::ivec3 block_pos, uint8_t block) {
     voxelMap[index(block_pos)] = block;
 }
 
-inline uint8_t Chunk::get_light_value(glm::ivec3 block_pos, bool rec) {
+uint8_t Chunk::get_light_value(glm::ivec3 block_pos, bool rec) {
     if (!allocated) return 0;
     if (off_bounds(block_pos)) {
-        return 0;
+        if (rec)
+            return chunk_manager->getLightValue({block_pos.x + pos.x * chunk_size.x,
+                                                 block_pos.y,
+                                                 block_pos.z + pos.y * chunk_size.z});
     }
     return lightMap[index(block_pos)];
 }

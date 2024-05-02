@@ -106,6 +106,8 @@ class ChunkManager {
     /// @return the id of the block if found, 0 in any other case
     uint8_t getBlock(glm::ivec3 world_pos);
 
+    uint8_t getLightValue(glm::ivec3 world_pos);
+
     /// @brief Sets a block in world space -> chooses the right chunk and right offset
     /// @param world_pos the block pos in world space
     /// @param block the id of the block to place
