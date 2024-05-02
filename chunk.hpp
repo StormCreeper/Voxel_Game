@@ -52,6 +52,7 @@ class Chunk {
     void build_mesh();
 
     void generateLightMap();
+    void floodFill(glm::ivec3 block_pos, uint8_t value, bool sky, bool first = false);
 
     /// @brief Allocates memory for the chunk's voxel data
     void allocate() {
@@ -93,7 +94,12 @@ class Chunk {
      */
     void setBlock(glm::ivec3 block_pos, uint8_t block);
 
-    inline uint8_t get_light_value(glm::ivec3 block_pos);
+    inline uint8_t get_light_value(glm::ivec3 block_pos, bool rec = true);
+
+    inline void set_sky_light(glm::ivec3 block_pos, uint8_t value) {
+        if (off_bounds(block_pos)) return;
+        lightMap[index(block_pos)] = (value << 4) + (lightMap[index(block_pos)] & 0b00001111);
+    }
 
     /**
      * @brief Renders the chunk
@@ -130,6 +136,11 @@ class Chunk {
      */
     inline int index(glm::ivec3 pos) const {
         return pos.x * chunk_size.x * chunk_size.y + pos.y * chunk_size.x + pos.z;
+    }
+
+    inline bool off_bounds(glm::ivec3 pos) const {
+        return pos.x < 0 || pos.y < 0 || pos.z < 0 ||
+               pos.x >= chunk_size.x || pos.y >= chunk_size.y || pos.z >= chunk_size.z;
     }
 
     /**

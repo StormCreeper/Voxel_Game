@@ -39,7 +39,7 @@ void Chunk::push_face(DIR dir, int texIndex) {
 
     light_level = BlockPalette::face_light[dir];
 
-    uint8_t light_value = get_light_value(world_offset);
+    uint8_t light_value = get_light_value(world_offset + BlockPalette::Normal[dir]);
     int block_light = light_value & 0b00001111;
     int sky_light = (light_value & 0b11110000) >> 4;
 
@@ -125,13 +125,47 @@ void Chunk::build_mesh() {
 }
 
 void Chunk::generateLightMap() {
-    std::fill(lightMap, lightMap + num_blocks, 0b11111111);
+    std::fill(lightMap, lightMap + num_blocks, 0b00000001);
+    for (int x = 0; x < Chunk::chunk_size.x; x++) {
+        for (int z = 0; z < Chunk::chunk_size.z; z++) {
+            int l = 15;
+            for (int y = Chunk::chunk_size.y - 1; y >= 0 && l > 0; y--) {
+                if (getBlock({x, y, z}))
+                    break;
+                else
+                    lightMap[index({x, y, z})] |= l << 4;
+            }
+        }
+    }
+    for (int x = 0; x < Chunk::chunk_size.x; x++) {
+        for (int z = 0; z < Chunk::chunk_size.z; z++) {
+            for (int y = Chunk::chunk_size.y - 1; y >= 0; y--) {
+                uint8_t lv = (get_light_value({x, y, z}) & 0b11110000) >> 4;
+                if (lv)
+                    floodFill({x, y, z}, lv, true, true);
+            }
+        }
+    }
+}
+
+void Chunk::floodFill(glm::ivec3 block_pos, uint8_t value, bool sky, bool first) {
+    if (off_bounds(block_pos)) return;
+    if (getBlock(block_pos)) return;
+
+    uint8_t lv = (get_light_value(block_pos) & 0b11110000) >> 4;
+    if ((value > lv || first) && value > 0) {
+        set_sky_light(block_pos, value);
+        glm::ivec3 p{};
+
+        for (int i = 0; i < 6; i++) {
+            floodFill(block_pos + BlockPalette::Normal[i], value - 1, sky, false);
+        }
+    }
 }
 
 uint8_t Chunk::getBlock(glm::ivec3 block_pos, bool rec) {
     if (!allocated) return 0;
-    if (block_pos.x < 0 || block_pos.y < 0 || block_pos.z < 0 ||
-        block_pos.x >= chunk_size.x || block_pos.y >= chunk_size.y || block_pos.z >= chunk_size.z) {
+    if (off_bounds(block_pos)) {
         if (rec)
             return chunk_manager->getBlock({block_pos.x + pos.x * chunk_size.x,
                                             block_pos.y,
@@ -144,8 +178,7 @@ uint8_t Chunk::getBlock(glm::ivec3 block_pos, bool rec) {
 
 void Chunk::setBlock(glm::ivec3 block_pos, uint8_t block) {
     if (!allocated) return;
-    if (block_pos.x < 0 || block_pos.y < 0 || block_pos.z < 0 ||
-        block_pos.x >= chunk_size.x || block_pos.y >= chunk_size.y || block_pos.z >= chunk_size.z) {
+    if (off_bounds(block_pos)) {
         return;
     }
 
@@ -154,10 +187,9 @@ void Chunk::setBlock(glm::ivec3 block_pos, uint8_t block) {
     voxelMap[index(block_pos)] = block;
 }
 
-inline uint8_t Chunk::get_light_value(glm::ivec3 block_pos) {
+inline uint8_t Chunk::get_light_value(glm::ivec3 block_pos, bool rec) {
     if (!allocated) return 0;
-    if (block_pos.x < 0 || block_pos.y < 0 || block_pos.z < 0 ||
-        block_pos.x >= chunk_size.x || block_pos.y >= chunk_size.y || block_pos.z >= chunk_size.z) {
+    if (off_bounds(block_pos)) {
         return 0;
     }
     return lightMap[index(block_pos)];
