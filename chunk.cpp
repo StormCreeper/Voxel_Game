@@ -154,10 +154,7 @@ void Chunk::generateLightMap() {
 void Chunk::floodFill(glm::ivec3 block_pos, uint8_t value, bool sky, bool first) {
     if (!allocated) allocate();
     if (off_bounds(block_pos)) {
-        chunk_manager->floodFill({block_pos.x + pos.x * chunk_size.x,
-                                  block_pos.y,
-                                  block_pos.z + pos.y * chunk_size.z},
-                                 value, sky);
+        return;
     }
     if (getBlock(block_pos)) return;
 
