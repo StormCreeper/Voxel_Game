@@ -21,6 +21,7 @@ class Chunk {
 
     bool ready = false;
     bool meshGenerated = false;
+    bool lightMapGenerated = false;
 
     static void init_chunks() {
         BlockPalette::init_block_descs();
@@ -106,9 +107,12 @@ class Chunk {
      * @param program the shader program id
      */
     void render(GLuint program) {
+        if (!lightMapGenerated) {
+            generateLightMap();
+            meshGenerated = false;
+        }
         if (!meshGenerated) {
             build_mesh();
-            meshGenerated = true;
         }
         setUniform(program, "u_chunkPos", glm::ivec3(pos.x, 0, pos.y));
         mesh->render();

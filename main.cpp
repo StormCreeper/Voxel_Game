@@ -218,17 +218,6 @@ void init() {
     g_projMatrix = g_camera.compute_projection_matrix();
 }
 
-/*
-Perfs :
-    Unplugged:
-     Still = 45 fps
-     Moving = 19 fps
-
-    Plugged:
-     Still = 815 fps -> 3000 fps -> 3550 fps
-     Moving = 31 fps
-*/
-
 void render() {
     nb_frames++;
     float time_now = glfwGetTime();
@@ -271,13 +260,12 @@ void update(const float currentTimeInSec) {
     glm::vec3 cam_pos = g_camera.get_position();
 
     g_chunkManager.updateQueue(cam_pos);
-    // g_chunkManager.generateOrLoadOneChunk(cam_pos);
 
     g_chunkManager.unloadUselessChunks();
 }
 
 void clear() {
-    g_chunkManager.reloadChunks();
+    g_chunkManager.destroy();
 
     glDeleteProgram(g_program);
 

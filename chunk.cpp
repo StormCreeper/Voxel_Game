@@ -39,7 +39,7 @@ void Chunk::push_face(DIR dir, int texIndex) {
 
     light_level = BlockPalette::face_light[dir];
 
-    uint8_t light_value = get_light_value(world_offset + BlockPalette::Normal[dir]);
+    uint8_t light_value = get_light_value(world_offset + BlockPalette::Normal[dir], true);
     int block_light = light_value & 0b00001111;
     int sky_light = (light_value & 0b11110000) >> 4;
 
@@ -98,7 +98,6 @@ void Chunk::push_face(DIR dir, int texIndex) {
 }
 
 void Chunk::build_mesh() {
-    generateLightMap();
     for (int x = 0; x < chunk_size.x; x++) {
         for (int y = 0; y < chunk_size.y; y++) {
             for (int z = 0; z < chunk_size.z; z++) {
@@ -122,6 +121,8 @@ void Chunk::build_mesh() {
     vp.clear();
     vn.clear();
     vuv.clear();
+
+    meshGenerated = true;
 }
 
 void Chunk::generateLightMap() {
@@ -146,11 +147,21 @@ void Chunk::generateLightMap() {
             }
         }
     }
+
+    lightMapGenerated = true;
 }
 
 void Chunk::floodFill(glm::ivec3 block_pos, uint8_t value, bool sky, bool first) {
-    if (off_bounds(block_pos)) return;
+    if (!allocated) allocate();
+    if (off_bounds(block_pos)) {
+        chunk_manager->floodFill({block_pos.x + pos.x * chunk_size.x,
+                                  block_pos.y,
+                                  block_pos.z + pos.y * chunk_size.z},
+                                 value, sky);
+    }
     if (getBlock(block_pos)) return;
+
+    meshGenerated = false;
 
     uint8_t lv = (get_light_value(block_pos) & 0b11110000) >> 4;
     if ((value > lv || first) && value > 0) {
@@ -183,6 +194,8 @@ void Chunk::setBlock(glm::ivec3 block_pos, uint8_t block) {
     }
 
     hasBeenModified = true;
+    meshGenerated = false;
+    lightMapGenerated = false;
 
     voxelMap[index(block_pos)] = block;
 }

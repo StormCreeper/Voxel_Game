@@ -41,6 +41,9 @@ class ChunkManager {
         }
     }
     ~ChunkManager() {
+    }
+
+    void destroy() {
         {
             std::unique_lock<std::mutex> lock(queue_mutex);
             should_terminate = true;
@@ -71,8 +74,6 @@ class ChunkManager {
     void regenerateOneChunkMesh(glm::ivec2 chunk_pos);
 
     std::shared_ptr<Chunk> getChunkFromQueue();
-
-    void generateOrLoadOneChunk();
 
     void reloadChunks();
 
@@ -107,6 +108,8 @@ class ChunkManager {
     uint8_t getBlock(glm::ivec3 world_pos);
 
     uint8_t getLightValue(glm::ivec3 world_pos);
+
+    void floodFill(glm::ivec3 world_pos, uint8_t value, bool sky);
 
     /// @brief Sets a block in world space -> chooses the right chunk and right offset
     /// @param world_pos the block pos in world space

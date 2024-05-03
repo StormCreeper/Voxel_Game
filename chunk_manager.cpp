@@ -72,6 +72,7 @@ void ChunkManager::unloadUselessChunks() {
 void ChunkManager::regenerateOneChunkMesh(glm::ivec2 chunk_pos) {
     map_mutex.lock();
     if (auto search = chunks.find(chunk_pos); search != chunks.end()) {
+        search->second->lightMapGenerated = false;
         search->second->meshGenerated = false;
     }
     map_mutex.unlock();
@@ -127,6 +128,8 @@ void ChunkManager::ThreadLoop() {
                 }
             }
 
+            chunk->generateLightMap();
+
             regenerateOneChunkMesh(chunk->pos + glm::ivec2(1, 0));
             regenerateOneChunkMesh(chunk->pos + glm::ivec2(-1, 0));
             regenerateOneChunkMesh(chunk->pos + glm::ivec2(0, 1));
@@ -136,29 +139,6 @@ void ChunkManager::ThreadLoop() {
             chunk->set_ready(true);
         }
     }
-}
-
-void ChunkManager::generateOrLoadOneChunk() {
-    auto chunk = getChunkFromQueue();
-    if (!chunk) return;
-
-    std::cout << "Load or generate one chunk at (" << chunk->pos.x << ", " << chunk->pos.y << ")\n";
-
-    if (!deserializeChunk(chunk)) {
-        if (chunk) {
-            chunk->voxel_map_from_noise();
-        } else {
-            std::cout << "Noooooo chunk creation failed :(((((\n";
-            exit(-1);
-        }
-    }
-    chunk->meshGenerated = false;
-    chunk->set_ready(true);
-
-    regenerateOneChunkMesh(chunk->pos + glm::ivec2(1, 0));
-    regenerateOneChunkMesh(chunk->pos + glm::ivec2(-1, 0));
-    regenerateOneChunkMesh(chunk->pos + glm::ivec2(0, 1));
-    regenerateOneChunkMesh(chunk->pos + glm::ivec2(0, -1));
 }
 
 void ChunkManager::reloadChunks() {
@@ -281,6 +261,7 @@ uint8_t ChunkManager::getBlock(glm::ivec3 world_pos) {
 }
 
 uint8_t ChunkManager::getLightValue(glm::ivec3 world_pos) {
+    if (world_pos.y >= Chunk::chunk_size.y) return 0b11111111;
     glm::ivec2 chunk_pos = glm::ivec2(
         floor(world_pos.x / (float)Chunk::chunk_size.x),
         floor(world_pos.z / (float)Chunk::chunk_size.z));
@@ -298,6 +279,24 @@ uint8_t ChunkManager::getLightValue(glm::ivec3 world_pos) {
         return 0;
 }
 
+void ChunkManager::floodFill(glm::ivec3 world_pos, uint8_t value, bool sky) {
+    glm::ivec2 chunk_pos = glm::ivec2(
+        floor(world_pos.x / (float)Chunk::chunk_size.x),
+        floor(world_pos.z / (float)Chunk::chunk_size.z));
+
+    glm::ivec2 chunk_coords = glm::ivec2(world_pos.x, world_pos.z) - chunk_pos * glm::ivec2(Chunk::chunk_size.x, Chunk::chunk_size.z);
+
+    map_mutex.lock();
+    auto search = chunks.find(chunk_pos);
+    auto end = chunks.end();
+    map_mutex.unlock();
+
+    if (search != end) {
+        if (search->second->is_ready())
+            search->second->floodFill({chunk_coords.x, world_pos.y, chunk_coords.y}, value, sky);
+    }
+}
+
 void ChunkManager::setBlock(glm::ivec3 world_pos, uint8_t block, bool rebuild) {
     glm::ivec2 chunk_pos = glm::ivec2(
         floor(world_pos.x / (float)Chunk::chunk_size.x),
@@ -313,7 +312,6 @@ void ChunkManager::setBlock(glm::ivec3 world_pos, uint8_t block, bool rebuild) {
     if (search != end) {
         search->second->setBlock({chunk_coords.x, world_pos.y, chunk_coords.y}, block);
         if (rebuild) {
-            search->second->build_mesh();
             if (chunk_coords.x == 0) regenerateOneChunkMesh(chunk_pos + glm::ivec2(-1, 0));
             if (chunk_coords.x == Chunk::chunk_size.x - 1) regenerateOneChunkMesh(chunk_pos + glm::ivec2(1, 0));
             if (chunk_coords.y == 0) regenerateOneChunkMesh(chunk_pos + glm::ivec2(0, -1));
