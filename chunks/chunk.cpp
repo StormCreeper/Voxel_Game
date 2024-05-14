@@ -1,5 +1,5 @@
 #include "chunk.hpp"
-#include "world_builder.hpp"
+#include "../world_builder.hpp"
 #include "chunk_manager.hpp"
 #include <memory>
 

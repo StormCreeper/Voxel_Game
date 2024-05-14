@@ -10,7 +10,7 @@
 #ifndef MESH_H
 #define MESH_H
 
-#include "gl_includes.hpp"
+#include "../gl_includes.hpp"
 
 #include <memory>
 #include <vector>

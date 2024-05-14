@@ -2,7 +2,7 @@
 #define CHUNK_MANAGER_HPP
 
 #include "chunk.hpp"
-#include "camera.hpp"
+#include "../camera.hpp"
 
 #include <memory>
 #include <map>

@@ -1,8 +1,8 @@
 #ifndef BLOCK_PALETTE_HPP
 #define BLOCK_PALETTE_HPP
 
-#include "texture.hpp"
-#include "shader.hpp"
+#include "gl_objects/texture.hpp"
+#include "gl_objects/shader.hpp"
 
 #include <cstdint>
 #include <vector>

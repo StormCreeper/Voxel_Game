@@ -12,25 +12,23 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
 set(SOURCES
   main.cpp
-  mesh.cpp
-  shader.cpp
-  texture.cpp
-  chunk.cpp
+  gl_objects/mesh.cpp
+  gl_objects/shader.cpp
+  gl_objects/texture.cpp
   world_builder.cpp
-  thread_pool.cpp
-  chunk_manager.cpp
+  chunks/chunk.cpp
+  chunks/chunk_manager.cpp
 
   camera.hpp
-  mesh.hpp
-  shader.hpp
   gl_includes.hpp
-  texture.hpp
-  chunk.hpp
-  chunk_manager.hpp
+  gl_objects/mesh.hpp
+  gl_objects/shader.hpp
+  gl_objects/texture.hpp
+  chunks/chunk.hpp
+  chunks/chunk_manager.hpp
   world_builder.hpp
   block_palette.hpp
   debug.hpp
-  thread_pool.hpp
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES})

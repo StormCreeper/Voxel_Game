@@ -1,8 +1,8 @@
 #ifndef CUBE_MAP_HPP
 #define CUBE_MAP_HPP
 
-#include "texture.hpp"
-#include "shader.hpp"
+#include "gl_objects/texture.hpp"
+#include "gl_objects/shader.hpp"
 
 class CubeMap {
    public:

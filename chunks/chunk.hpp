@@ -4,9 +4,9 @@
 #include <mutex>
 #include <atomic>
 
-#include "mesh.hpp"
+#include "../gl_objects/mesh.hpp"
 #include <iostream>
-#include "block_palette.hpp"
+#include "../block_palette.hpp"
 
 class ChunkManager;
 

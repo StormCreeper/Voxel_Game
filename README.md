@@ -15,7 +15,7 @@ I'm trying to make the fastest, most reliable, and most extensible voxel chunk s
 ## ToDo
 
 - [ ] Project the 3D frustum onto the 2D plane to make it complete
-- [ ] Make the block management system load blocks from description files
+- [x] Make the block management system load blocks from description files
 - [ ] Change the textures from an atlas to an array of textures to avoid texture bleeding
 - [ ] Better procedural generation (not the priority)
 - [x] Block placing and destruction

@@ -1,8 +1,8 @@
-#include "mesh.hpp"
+#include "gl_objects/mesh.hpp"
 #include "camera.hpp"
-#include "shader.hpp"
-#include "texture.hpp"
-#include "chunk_manager.hpp"
+#include "gl_objects/shader.hpp"
+#include "gl_objects/texture.hpp"
+#include "chunks/chunk_manager.hpp"
 #include "cube_map.hpp"
 
 #include "gl_includes.hpp"
