@@ -1,7 +1,7 @@
 #ifndef WORLD_BUILDER_HPP
 #define WORLD_BUILDER_HPP
 
-#include "gl_includes.hpp"
+#include "utils/gl_includes.hpp"
 
 class WorldBuilder {
    public:

@@ -19,8 +19,8 @@ set(SOURCES
   chunks/chunk.cpp
   chunks/chunk_manager.cpp
 
-  camera.hpp
-  gl_includes.hpp
+  utils/gl_includes.hpp
+  utils/debug.hpp
   gl_objects/mesh.hpp
   gl_objects/shader.hpp
   gl_objects/texture.hpp
@@ -28,7 +28,7 @@ set(SOURCES
   chunks/chunk_manager.hpp
   world_builder.hpp
   block_palette.hpp
-  debug.hpp
+  camera.hpp
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES})

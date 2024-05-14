@@ -8,7 +8,7 @@
 #ifndef SHADER_HPP
 #define SHADER_HPP
 
-#include "../gl_includes.hpp"
+#include "../utils/gl_includes.hpp"
 #include <string>
 
 std::string file2String(const std::string &filename);

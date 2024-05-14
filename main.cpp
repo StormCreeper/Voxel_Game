@@ -5,7 +5,7 @@
 #include "chunks/chunk_manager.hpp"
 #include "cube_map.hpp"
 
-#include "gl_includes.hpp"
+#include "utils/gl_includes.hpp"
 
 #include <cmath>
 #include <cstdlib>
@@ -13,7 +13,7 @@
 #include <memory>
 #include <string>
 
-#include "debug.hpp"
+#include "utils/debug.hpp"
 
 std::shared_ptr<CubeMap> g_cubeMap{};
 
