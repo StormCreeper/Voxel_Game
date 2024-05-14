@@ -2,6 +2,7 @@
 #define CHUNK_HPP
 
 #include <mutex>
+#include <atomic>
 
 #include "mesh.hpp"
 #include <iostream>
@@ -18,8 +19,6 @@ class Chunk {
     static constexpr inline const int num_blocks = chunk_size.x * chunk_size.y * chunk_size.z;
 
     static std::shared_ptr<Texture> chunk_texture;
-
-    bool ready = false;
     bool meshGenerated = false;
     bool lightMapGenerated = false;
 
@@ -119,17 +118,11 @@ class Chunk {
     }
 
     bool is_ready() {
-        bool r;
-        mutex.lock();
-        r = ready;
-        mutex.unlock();
-        return r;
+        return ready;
     }
 
     void set_ready(bool r) {
-        mutex.lock();
         ready = r;
-        mutex.unlock();
     }
 
    private:
@@ -165,7 +158,6 @@ class Chunk {
    public:
     uint8_t *voxelMap{};
     bool hasBeenModified = false;
-    std::mutex mutex{};
     glm::ivec2 pos{};
 
    private:
@@ -185,6 +177,8 @@ class Chunk {
 
     std::shared_ptr<Mesh> mesh{};
     glm::mat4 modelMatrix = glm::mat4(1.0f);
+
+    std::atomic_bool ready = false;
 };
 
 #endif  // CHUNK_HPP
