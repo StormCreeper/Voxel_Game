@@ -1,17 +1,17 @@
 #include "world_builder.hpp"
 
+SimplexNoise WorldBuilder::sn{0.005f, 1.0f};
+
 uint8_t WorldBuilder::generation_function(glm::ivec3 world_pos) {
-    float freq = 0.1;
-    float amp = 10.;
-    float height_off = 0;
-    float offset = 0;
-    for (int i = 0; i < 8; i++) {
-        height_off += sin((cos(offset) * world_pos.x + sin(offset) * world_pos.z) * freq) * amp;
-        offset += 9.10929;
-        freq *= 2;
-        amp /= 2;
-    }
-    int height = 50 + height_off * 0.3;
+    float mountain_val = abs(sn.fractal(8, world_pos.x, world_pos.z)) * 2.0f - 1.0f;
+    float plain_val = sn.fractal(4, world_pos.x * 0.4, world_pos.z * 0.4);
+
+    float lerp = sn.fractal(8, world_pos.x * 0.3, world_pos.z * 0.3) * 0.5f + 0.5f;
+
+    float val = mountain_val * lerp + plain_val * (1 - lerp);
+    val = pow(val * 0.5f + 0.5f, 2.0f) * 2.0f - 1.0f;
+
+    int height = 30 + val * 30;
     if (world_pos.y < height - 5) return 1;
     if (world_pos.y < height - 1) return 2;
     if (world_pos.y < height) return 3;

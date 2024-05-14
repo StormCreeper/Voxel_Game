@@ -18,6 +18,7 @@ set(SOURCES
   world_builder.cpp
   chunks/chunk.cpp
   chunks/chunk_manager.cpp
+  SimplexNoise.cpp
 
   utils/gl_includes.hpp
   utils/debug.hpp
@@ -29,6 +30,7 @@ set(SOURCES
   world_builder.hpp
   block_palette.hpp
   camera.hpp
+  SimplexNoise.h
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES})
