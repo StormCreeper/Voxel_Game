@@ -134,9 +134,9 @@ class ChunkManager {
     std::deque<std::shared_ptr<Chunk>>
         taskQueue{};
     bool thread_pool_paused = false;
-    int view_distance = 15;
-    int load_distance = 17;
-    int unload_distance = 20;
+    int view_distance = 18;
+    int load_distance = 20;
+    int unload_distance = 23;
 };
 
 #endif  // CHUNK_MANAGER_HPP

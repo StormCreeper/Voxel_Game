@@ -15,7 +15,7 @@ const int tex_num_y = 2;
 
 class Chunk {
    public:
-    static inline constexpr glm::ivec3 chunk_size = {16, 64, 16};
+    static inline constexpr glm::ivec3 chunk_size = {16, 128, 16};
     static constexpr inline const int num_blocks = chunk_size.x * chunk_size.y * chunk_size.z;
 
     static std::shared_ptr<Texture> chunk_texture;
