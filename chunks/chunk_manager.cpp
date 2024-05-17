@@ -47,7 +47,7 @@ void ChunkManager::unloadUselessChunks() {
                 if (tmp_it->second->hasBeenModified) {
                     serializeChunk(tmp_it->first);
                 }
-                if (!tmp_it->second->is_ready()) {
+                if (tmp_it->second->concurrent_use) {
                     toDelete.push_back(tmp_it->second);
                 }
                 chunks.erase(tmp_it);
@@ -59,7 +59,7 @@ void ChunkManager::unloadUselessChunks() {
 
     auto it = toDelete.begin();
     while (it != toDelete.end()) {
-        if (it->get()->is_ready()) {
+        if (!it->get()->concurrent_use) {
             auto tmp_it = it;
             ++it;
             toDelete.erase(tmp_it);
@@ -72,8 +72,7 @@ void ChunkManager::unloadUselessChunks() {
 void ChunkManager::regenerateOneChunkMesh(glm::ivec2 chunk_pos) {
     map_mutex.lock();
     if (auto search = chunks.find(chunk_pos); search != chunks.end()) {
-        search->second->lightMapGenerated = false;
-        search->second->meshGenerated = false;
+        search->second->state = ChunkState::LightMapGenerated;
     }
     map_mutex.unlock();
 }
@@ -119,6 +118,8 @@ void ChunkManager::ThreadLoop() {
 
             if (!chunk) continue;
 
+            chunk->concurrent_use = true;
+
             if (!deserializeChunk(chunk)) {
                 if (chunk) {
                     chunk->voxel_map_from_noise();
@@ -128,6 +129,8 @@ void ChunkManager::ThreadLoop() {
                 }
             }
 
+            chunk->state = BlockArrayInitialized;
+
             chunk->generateLightMap();
 
             regenerateOneChunkMesh(chunk->pos + glm::ivec2(1, 0));
@@ -135,8 +138,9 @@ void ChunkManager::ThreadLoop() {
             regenerateOneChunkMesh(chunk->pos + glm::ivec2(0, 1));
             regenerateOneChunkMesh(chunk->pos + glm::ivec2(0, -1));
 
-            chunk->meshGenerated = false;
-            chunk->set_ready(true);
+            chunk->build_mesh();
+
+            chunk->concurrent_use = false;
         }
     }
 }
@@ -148,7 +152,7 @@ void ChunkManager::reloadChunks() {
     queue_mutex.unlock();
     map_mutex.lock();
     for (auto it : chunks) {
-        if (!it.second->is_ready()) {
+        if (it.second->concurrent_use) {
             toDelete.push_back(it.second);
         }
     }
@@ -164,7 +168,7 @@ void ChunkManager::reloadChunks() {
 void ChunkManager::saveChunks() {
     map_mutex.lock();
     for (const auto& [pos, chunk] : chunks) {
-        if (chunk->is_ready() && chunk->hasBeenModified)
+        if (!chunk->concurrent_use && chunk->hasBeenModified)
             serializeChunk(pos);
     }
     map_mutex.unlock();
@@ -190,7 +194,7 @@ void ChunkManager::renderAll(GLuint program, Camera& camera) {
 
     map_mutex.lock();
     for (const auto& [pos, chunk] : chunks) {
-        if (chunk->is_ready() && isInFrustrum(pos, cam_dir, glm::radians(180.f))) {
+        if (!chunk->concurrent_use && isInFrustrum(pos, cam_dir, glm::radians(180.f))) {
             map_mutex.unlock();
             chunk->render(program);
             map_mutex.lock();
@@ -292,7 +296,7 @@ void ChunkManager::floodFill(glm::ivec3 world_pos, uint8_t value, bool sky) {
     map_mutex.unlock();
 
     if (search != end) {
-        if (search->second->is_ready())
+        if (!search->second->concurrent_use)
             search->second->floodFill({chunk_coords.x, world_pos.y, chunk_coords.y}, value, sky);
     }
 }

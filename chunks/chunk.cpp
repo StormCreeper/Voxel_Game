@@ -98,6 +98,10 @@ void Chunk::push_face(DIR dir, int texIndex) {
 }
 
 void Chunk::build_mesh() {
+    if (state < LightMapGenerated) {
+        std::cout << "Error: tried to build mesh based on incomplete data (lightmap)\n";
+        return;
+    }
     for (int x = 0; x < chunk_size.x; x++) {
         for (int y = 0; y < chunk_size.y; y++) {
             for (int z = 0; z < chunk_size.z; z++) {
@@ -116,13 +120,21 @@ void Chunk::build_mesh() {
         }
     }
 
-    mesh->initGPUGeometry(vp, vn, vuv);
+    state = MeshBuilt;
+}
 
-    vp.clear();
-    vn.clear();
-    vuv.clear();
+void Chunk::send_mesh_to_gpu() {
+    if (state == MeshBuilt) {
+        mesh->initGPUGeometry(vp, vn, vuv);
 
-    meshGenerated = true;
+        vp.clear();
+        vn.clear();
+        vuv.clear();
+
+        state = Ready;
+    } else {
+        std::cout << "Error : tried to send unvalid mesh data to CPU\n";
+    }
 }
 
 void Chunk::generateLightMap() {
@@ -148,7 +160,7 @@ void Chunk::generateLightMap() {
         }
     }
 
-    lightMapGenerated = true;
+    state = LightMapGenerated;
 }
 
 void Chunk::floodFill(glm::ivec3 block_pos, uint8_t value, bool sky, bool first) {
@@ -157,8 +169,6 @@ void Chunk::floodFill(glm::ivec3 block_pos, uint8_t value, bool sky, bool first)
         return;
     }
     if (getBlock(block_pos)) return;
-
-    meshGenerated = false;
 
     uint8_t lv = (get_light_value(block_pos) & 0b11110000) >> 4;
     if ((value > lv || first) && value > 0) {
@@ -190,11 +200,10 @@ void Chunk::setBlock(glm::ivec3 block_pos, uint8_t block) {
         return;
     }
 
-    hasBeenModified = true;
-    meshGenerated = false;
-    lightMapGenerated = false;
-
     voxelMap[index(block_pos)] = block;
+
+    hasBeenModified = true;
+    state = BlockArrayInitialized;
 }
 
 uint8_t Chunk::get_light_value(glm::ivec3 block_pos, bool rec) {

@@ -8,6 +8,15 @@
 #include <iostream>
 #include "../block_palette.hpp"
 
+enum ChunkState {
+    EmptyChunk,
+    Allocated,
+    BlockArrayInitialized,
+    LightMapGenerated,
+    MeshBuilt,
+    Ready
+};
+
 class ChunkManager;
 
 const int tex_num_x = 8;
@@ -19,8 +28,9 @@ class Chunk {
     static constexpr inline const int num_blocks = chunk_size.x * chunk_size.y * chunk_size.z;
 
     static std::shared_ptr<Texture> chunk_texture;
-    bool meshGenerated = false;
-    bool lightMapGenerated = false;
+
+    std::atomic<ChunkState> state = EmptyChunk;
+    std::atomic_bool concurrent_use = false;
 
     static void init_chunks() {
         BlockPalette::init_block_descs();
@@ -50,6 +60,8 @@ class Chunk {
 
     /// @brief Builds (or rebuilds) the chunk mesh based on the voxel grid
     void build_mesh();
+
+    void send_mesh_to_gpu();
 
     void generateLightMap();
     void floodFill(glm::ivec3 block_pos, uint8_t value, bool sky, bool first = false);
@@ -106,23 +118,17 @@ class Chunk {
      * @param program the shader program id
      */
     void render(GLuint program) {
-        if (!lightMapGenerated) {
-            generateLightMap();
-            meshGenerated = false;
+        if (state != Ready) {
+            if (state == BlockArrayInitialized)
+                generateLightMap();
+            if (state == LightMapGenerated)
+                build_mesh();
+            if (state == MeshBuilt)
+                send_mesh_to_gpu();
         }
-        if (!meshGenerated) {
-            build_mesh();
-        }
+        if (state != Ready) return;
         setUniform(program, "u_chunkPos", glm::ivec3(pos.x, 0, pos.y));
         mesh->render();
-    }
-
-    bool is_ready() {
-        return ready;
-    }
-
-    void set_ready(bool r) {
-        ready = r;
     }
 
    private:
@@ -177,8 +183,6 @@ class Chunk {
 
     std::shared_ptr<Mesh> mesh{};
     glm::mat4 modelMatrix = glm::mat4(1.0f);
-
-    std::atomic_bool ready = false;
 };
 
 #endif  // CHUNK_HPP
