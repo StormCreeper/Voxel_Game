@@ -6,6 +6,14 @@
 // Basic camera model
 class Camera {
    public:
+    float m_yaw = 0.0f;
+    float m_pitch = 0.0f;
+
+    bool mouse_locked = false;
+    glm::vec3 m_pos = glm::vec3(8.0f, 70.0f, 8.0f);
+
+    inline void set_position(const glm::vec3 &p) { m_pos = p; }
+    inline glm::vec3 get_position() { return m_pos; }
     inline float get_fov() const { return m_fov; }
     inline void set_fov(const float f) { m_fov = f; }
     inline float get_aspect_ratio() const { return m_aspectRatio; }
@@ -14,12 +22,21 @@ class Camera {
     inline void set_near(const float n) { m_near = n; }
     inline float get_far() const { return m_far; }
     inline void set_far(const float n) { m_far = n; }
-    inline void set_position(const glm::vec3 &p) { m_pos = p; }
-    inline glm::vec3 get_position() { return m_pos; }
     inline void set_target(const glm::vec3 &t) { m_target = t; }
     inline glm::vec3 get_target() { return m_target; }
     inline void set_screen_center(const glm::vec2 &p) { screen_center = p; }
     inline glm::vec2 get_screen_center() { return screen_center; }
+
+    inline void init(int width, int height) {
+        set_aspect_ratio(static_cast<float>(width) / static_cast<float>(height));
+
+        set_near(0.1);
+        set_far(500);
+
+        set_fov(90);
+
+        set_screen_center(glm::vec2(1024 / 2, 768 / 2));
+    }
 
     /// @brief Compute the camera's view matrix based on internal parameters
     /// @return a view matrix
@@ -67,52 +84,9 @@ class Camera {
             if (action == GLFW_PRESS) mouse_locked = true;
         }
     }
-    /// @brief Update the keypress states for wasd, space and left ctrl
-    void update_input_keys(int key, int action) {
-        if (key == GLFW_KEY_W) front_pressed = action != GLFW_RELEASE;
-        if (key == GLFW_KEY_S) back_pressed = action != GLFW_RELEASE;
-        if (key == GLFW_KEY_A) left_pressed = action != GLFW_RELEASE;
-        if (key == GLFW_KEY_D) right_pressed = action != GLFW_RELEASE;
-        if (key == GLFW_KEY_SPACE) up_pressed = action != GLFW_RELEASE;
-        if (key == GLFW_KEY_LEFT_CONTROL) down_pressed = action != GLFW_RELEASE;
-        if (key == GLFW_KEY_LEFT_SHIFT) speed_pressed = action != GLFW_RELEASE;
-
-        if (mouse_locked && key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-            mouse_locked = false;
-        }
-    }
 
     /// @brief Updates the camera position and target vector based on input and pitch and yaw
     void update(float delta_time) {
-        // Adjust camera position based on input keys (WASD)
-        float camera_speed = 30.f * delta_time;
-        if (speed_pressed) camera_speed *= 4.f;
-        glm::vec3 front;
-        glm::vec3 right;
-        glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-
-        // Compute camera front and right vectors based on yaw
-        glm::vec3 front_tmp;
-        front_tmp.x = sin(m_yaw);
-        front_tmp.y = 0.0f;
-        front_tmp.z = cos(m_yaw);
-        front = glm::normalize(front_tmp);
-        right = glm::normalize(glm::cross(front, up));
-
-        // Update camera position
-        if (front_pressed)
-            m_pos += front * camera_speed;
-        if (back_pressed)
-            m_pos -= front * camera_speed;
-        if (left_pressed)
-            m_pos -= right * camera_speed;
-        if (right_pressed)
-            m_pos += right * camera_speed;
-        if (down_pressed)
-            m_pos -= up * camera_speed;
-        if (up_pressed)
-            m_pos += up * camera_speed;
-
         // Adjust view
 
         glm::vec4 cameraOffset(0, 0, 1, 0);
@@ -126,15 +100,11 @@ class Camera {
     }
 
    private:
-    glm::vec3 m_pos = glm::vec3(8.0f, 70.0f, 8.0f);
     glm::vec3 m_target = glm::vec3(0, 0, 0);
     float m_fov = 90.f;         // Field of view, in degrees
     float m_aspectRatio = 1.f;  // Ratio between the width and the height of the image
     float m_near = 0.01f;       // Distance before which geometry is excluded from the rasterization process
     float m_far = 100.f;        // Distance after which the geometry is excluded from the rasterization process
-
-    float m_yaw = 0.0f;
-    float m_pitch = 0.0f;
 
     // Mouse
 
@@ -142,18 +112,6 @@ class Camera {
     glm::vec2 mouse_last_pos{};
     glm::vec2 mouse_pos{};
     glm::vec2 screen_center{};
-
-    // Keys
-    bool front_pressed{};
-    bool back_pressed{};
-    bool left_pressed{};
-    bool right_pressed{};
-    bool up_pressed{};
-    bool down_pressed{};
-
-    bool speed_pressed{};
-
-    bool mouse_locked = false;
 };
 
 #endif  // CAMERA_H

@@ -1,5 +1,5 @@
 #include "gl_objects/mesh.hpp"
-#include "camera.hpp"
+#include "player.hpp"
 #include "gl_objects/shader.hpp"
 #include "gl_objects/texture.hpp"
 #include "chunks/chunk_manager.hpp"
@@ -23,7 +23,7 @@ GLFWwindow *g_window{};
 // GPU objects
 GLuint g_program{};  // A GPU program contains at least a vertex shader and a fragment shader
 
-Camera g_camera{};
+Player g_player{};
 
 ChunkManager g_chunkManager{};
 
@@ -34,19 +34,19 @@ int g_tool = 1;
 
 // Executed each time the window is resized. Adjust the aspect ratio and the rendering viewport to the current window.
 void window_size_callback(GLFWwindow *window, int width, int height) {
-    g_camera.set_aspect_ratio(static_cast<float>(width) / static_cast<float>(height));
+    g_player.m_camera.set_aspect_ratio(static_cast<float>(width) / static_cast<float>(height));
     glViewport(0, 0, (GLint)width, (GLint)height);  // Dimension of the rendering region in the window
 
-    g_camera.set_screen_center(glm::vec2(width / 2, height / 2));
+    g_player.m_camera.set_screen_center(glm::vec2(width / 2, height / 2));
 
-    g_projMatrix = g_camera.compute_projection_matrix();
+    g_projMatrix = g_player.m_camera.compute_projection_matrix();
 }
 
 bool shiftPressed = false;
 
 // Executed each time a key is entered.
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
-    g_camera.update_input_keys(key, action);
+    g_player.update_input_keys(key, action);
 
     if (action == GLFW_PRESS) {
         if (key == GLFW_KEY_Z) {
@@ -82,18 +82,18 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 }
 
 void cursor_pos_callback(GLFWwindow *window, double xpos, double ypos) {
-    g_camera.update_input_mouse_pos(window, glm::vec2(xpos, ypos));
+    g_player.m_camera.update_input_mouse_pos(window, glm::vec2(xpos, ypos));
 }
 
 void mouse_button_callback(GLFWwindow *window, int button, int action, int mods) {
-    g_camera.update_input_mouse_button(button, action);
+    g_player.m_camera.update_input_mouse_button(button, action);
 
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
         glm::ivec3 block_pos{};
         glm::ivec3 normal{};
-        glm::vec3 dir = glm::normalize(g_camera.get_target() - g_camera.get_position());
+        glm::vec3 dir = glm::normalize(g_player.m_camera.get_target() - g_player.m_camera.get_position());
 
-        if (g_chunkManager.raycast(g_camera.get_position(), dir, 15, block_pos, normal)) {
+        if (g_chunkManager.raycast(g_player.m_camera.get_position(), dir, 15, block_pos, normal)) {
             std::cout << "Remove block !! at {" << block_pos.x << ", " << block_pos.y << ", " << block_pos.z << "} ? :(\n";
             g_chunkManager.setBlock(block_pos, 0, true);
         } else {
@@ -104,9 +104,9 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
     if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
         glm::ivec3 block_pos{};
         glm::ivec3 normal{};
-        glm::vec3 dir = glm::normalize(g_camera.get_target() - g_camera.get_position());
+        glm::vec3 dir = glm::normalize(g_player.m_camera.get_target() - g_player.m_camera.get_position());
 
-        if (g_chunkManager.raycast(g_camera.get_position(), dir, 15, block_pos, normal)) {
+        if (g_chunkManager.raycast(g_player.m_camera.get_position(), dir, 15, block_pos, normal)) {
             std::cout << "Set block !! at {" << block_pos.x << ", " << block_pos.y << ", " << block_pos.z << "} ? Block ID: " << g_tool << " :(\n";
             g_chunkManager.setBlock(block_pos + normal, g_tool, true);
         } else {
@@ -186,14 +186,8 @@ void initScene() {
 
     int width, height;
     glfwGetWindowSize(g_window, &width, &height);
-    g_camera.set_aspect_ratio(static_cast<float>(width) / static_cast<float>(height));
 
-    g_camera.set_near(0.1);
-    g_camera.set_far(500);
-
-    g_camera.set_fov(90);
-
-    g_camera.set_screen_center(glm::vec2(1024 / 2, 768 / 2));
+    g_player.m_camera.init(width, height);
 }
 
 float last_time = 0;
@@ -215,7 +209,7 @@ void init() {
 
     setUniform(g_program, "u_chunkSize", Chunk::chunk_size);
 
-    g_projMatrix = g_camera.compute_projection_matrix();
+    g_projMatrix = g_player.m_camera.compute_projection_matrix();
 }
 
 void render() {
@@ -234,7 +228,7 @@ void render() {
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    g_viewMatrix = g_camera.compute_view_matrix();
+    g_viewMatrix = g_player.m_camera.compute_view_matrix();
 
     // Render stars
 
@@ -246,7 +240,7 @@ void render() {
 
     setUniform(g_program, "u_viewProjMat", g_projMatrix * g_viewMatrix);
 
-    g_chunkManager.renderAll(g_program, g_camera);
+    g_chunkManager.renderAll(g_program, g_player.m_camera);
 }
 
 float last_physic_time = 0;
@@ -255,9 +249,9 @@ void update(const float currentTimeInSec) {
     float delta_time = currentTimeInSec - last_physic_time;
     last_physic_time = currentTimeInSec;
 
-    g_camera.update(delta_time);
+    g_player.update(delta_time);
 
-    glm::vec3 cam_pos = g_camera.get_position();
+    glm::vec3 cam_pos = g_player.m_camera.get_position();
 
     g_chunkManager.updateQueue(cam_pos);
 

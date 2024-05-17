@@ -31,6 +31,7 @@ set(SOURCES
   block_palette.hpp
   camera.hpp
   SimplexNoise.h
+  player.hpp
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES})

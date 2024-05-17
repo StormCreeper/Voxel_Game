@@ -23,3 +23,6 @@ I'm trying to make the fastest, most reliable, and most extensible voxel chunk s
 - [ ] Change a vertex representation in GPU memory. Goal : from 8x32 bit floats to a single 32bit integer
 - [ ] Add ImGui for debug
 - [ ] Make an actual UI system
+- [ ] Tick system (20 ticks per second)
+- [ ] Make the chunk jobs queue update only when the player move a certain amount
+- [ ] Make a ChunkDealer class, that don't free the chunks memory, but resets them and re-use them
