@@ -14,13 +14,15 @@
 #include <condition_variable>
 #include <thread>
 
+/// @brief A struct to compare the position of two Chunks, used for storing them in a map
+/// @relates ChunkManager
 struct cmpChunkPos {
     inline bool operator()(const glm::ivec2& a, const glm::ivec2& b) const {
         if (a.x == b.x) return a.y < b.y;
         return a.x < b.x;
     }
 };
-
+/// @brief A struct to sort chunk by their distance to the center (the player position). Used to sort the task queue and generating first the chunks that are close.
 struct cmpChunkPosOrigin {
     static inline glm::vec2 center{};
 
@@ -34,31 +36,28 @@ struct cmpChunkPosOrigin {
 
 class ChunkManager {
    public:
-    ChunkManager() {
-        const uint32_t num_threads = 1;  // Max # of threads the system supports
-        for (uint32_t ii = 0; ii < num_threads; ++ii) {
-            threads.emplace_back(std::thread(&ChunkManager::ThreadLoop, this));
-        }
-    }
-    ~ChunkManager() {
-    }
+    std::map<glm::ivec2, std::shared_ptr<Chunk>, cmpChunkPos> chunks{};
 
-    void destroy() {
-        {
-            std::unique_lock<std::mutex> lock(queue_mutex);
-            should_terminate = true;
-        }
-        mutex_condition.notify_all();
-        for (std::thread& active_thread : threads) {
-            active_thread.join();
-        }
-        threads.clear();
+    std::mutex queue_mutex{};
+    std::condition_variable mutex_condition{};
+    std::vector<std::thread> threads;
+    bool should_terminate = false;
 
-        saveChunks();
-    }
+    glm::vec3 cam_pos;
 
-    void ThreadLoop();
+   private:
+    std::deque<std::shared_ptr<Chunk>>
+        taskQueue{};
 
+    std::mutex map_mutex{};
+    std::vector<std::shared_ptr<Chunk>> toDelete{};
+
+    bool thread_pool_paused = false;
+    int view_distance = 18;
+    int load_distance = 20;
+    int unload_distance = 23;
+
+   public:  // utility functions
     inline glm::vec2 chunk_center(glm::ivec2 chunk_pos) {
         return (glm::vec2(chunk_pos) + glm::vec2(0.5, 0.5)) * glm::vec2(Chunk::chunk_size.x, Chunk::chunk_size.z);
     }
@@ -66,18 +65,6 @@ class ChunkManager {
     inline float chunk_distance(glm::ivec2 chunk_pos) {
         return glm::length(glm::vec2(cam_pos.x, cam_pos.z) - chunk_center(chunk_pos));
     }
-
-    void updateQueue(glm::vec3 world_pos);
-
-    void unloadUselessChunks();
-
-    void regenerateOneChunkMesh(glm::ivec2 chunk_pos);
-
-    std::shared_ptr<Chunk> getChunkFromQueue();
-
-    void reloadChunks();
-
-    void saveChunks();
 
     /**
      * @brief Calculates the angle between two 2D vectors.
@@ -92,6 +79,25 @@ class ChunkManager {
 
     /// @brief 2D Frustum culling
     bool isInFrustrum(glm::ivec2 chunk_pos, glm::vec2 cam_dir, float fov);
+
+   public:
+    ChunkManager();
+
+    void destroy();
+
+    void ThreadLoop();
+
+    void updateQueue(glm::vec3 world_pos);
+
+    void unloadUselessChunks();
+
+    void regenerateOneChunkMesh(glm::ivec2 chunk_pos);
+
+    std::shared_ptr<Chunk> getChunkFromQueue();
+
+    void reloadChunks();
+
+    void saveChunks();
 
     /// @todo project cam pos and cam_dir to do 3D frustum culling using 2D
     void renderAll(GLuint program, Camera& camera);
@@ -118,25 +124,6 @@ class ChunkManager {
     void setBlock(glm::ivec3 world_pos, uint8_t block, bool rebuild);
 
     bool raycast(glm::vec3 origin, glm::vec3 direction, int nSteps, glm::ivec3& block_pos, glm::ivec3& normal);
-
-    std::map<glm::ivec2, std::shared_ptr<Chunk>, cmpChunkPos> chunks{};
-    std::mutex map_mutex{};
-    std::vector<std::shared_ptr<Chunk>> toDelete{};
-
-    std::mutex queue_mutex{};
-    std::condition_variable mutex_condition{};
-    std::vector<std::thread> threads;
-    bool should_terminate = false;
-
-    glm::vec3 cam_pos;
-
-   private:
-    std::deque<std::shared_ptr<Chunk>>
-        taskQueue{};
-    bool thread_pool_paused = false;
-    int view_distance = 18;
-    int load_distance = 20;
-    int unload_distance = 23;
 };
 
 #endif  // CHUNK_MANAGER_HPP

@@ -42,16 +42,7 @@ class Chunk {
      * @param pos Position of the chunk in chunk coordinates.
      * @param chunk_manager Pointer to the parent ChunkManager.
      */
-    Chunk(glm::ivec2 pos, ChunkManager *chunk_manager) {
-        mesh = std::make_shared<Mesh>();
-        this->chunk_manager = chunk_manager;
-        this->pos = pos;
-        this->modelMatrix = glm::translate(modelMatrix, glm::vec3(pos.x * chunk_size.x, 0, pos.y * chunk_size.z));
-
-        mesh->genBuffers();
-
-        // std::cout << "Init chunk at (" << pos.x << ", " << pos.y << ")\n";
-    }
+    Chunk(glm::ivec2 pos, ChunkManager *chunk_manager);
 
     /// @brief Destructor for Chunk class.
     ~Chunk() {
@@ -67,26 +58,9 @@ class Chunk {
     void floodFill(glm::ivec3 block_pos, uint8_t value, bool sky, bool first = false);
 
     /// @brief Allocates memory for the chunk's voxel data
-    void allocate() {
-        voxelMap = (uint8_t *)realloc(voxelMap, num_blocks * sizeof(uint8_t));
-        lightMap = (uint8_t *)realloc(lightMap, num_blocks * sizeof(uint8_t));
-        if (!voxelMap || !lightMap) {
-            std::cout << "NOOOOOOO no room left :( youre computer is ded :(\n";
-            exit(-1);
-        }
+    void allocate();
 
-        // std::cout << "Allocated new chunk at (" << pos.x << ", " << pos.y << ")\n";
-        allocated = true;
-    }
-
-    void free_mem() {
-        if (voxelMap)
-            free(voxelMap);
-        if (lightMap)
-            free(lightMap);
-        // std::cout << "Freed chunk at (" << pos.x << ", " << pos.y << ")\n";
-        allocated = false;
-    }
+    void free_mem();
 
     /// @brief generate a voxel map using different noise functions
     void voxel_map_from_noise();
@@ -117,19 +91,7 @@ class Chunk {
      * @brief Renders the chunk
      * @param program the shader program id
      */
-    void render(GLuint program) {
-        if (state != Ready) {
-            if (state == BlockArrayInitialized)
-                generateLightMap();
-            if (state == LightMapGenerated)
-                build_mesh();
-            if (state == MeshBuilt)
-                send_mesh_to_gpu();
-        }
-        if (state != Ready) return;
-        setUniform(program, "u_chunkPos", glm::ivec3(pos.x, 0, pos.y));
-        mesh->render();
-    }
+    void render(GLuint program);
 
    private:
     /**

@@ -50,7 +50,8 @@ void ChunkManager::unloadUselessChunks() {
                 if (tmp_it->second->concurrent_use) {
                     toDelete.push_back(tmp_it->second);
                 }
-                chunks.erase(tmp_it);
+                if (!tmp_it->second->concurrent_use)
+                    chunks.erase(tmp_it);
             } else {
                 ++it;
             }
@@ -98,6 +99,27 @@ std::shared_ptr<Chunk> ChunkManager::getChunkFromQueue() {
     }
 
     return chunk;
+}
+
+ChunkManager::ChunkManager() {
+    const uint32_t num_threads = 1;  // Max # of threads the system supports
+    for (uint32_t ii = 0; ii < num_threads; ++ii) {
+        threads.emplace_back(std::thread(&ChunkManager::ThreadLoop, this));
+    }
+}
+
+void ChunkManager::destroy() {
+    {
+        std::unique_lock<std::mutex> lock(queue_mutex);
+        should_terminate = true;
+    }
+    mutex_condition.notify_all();
+    for (std::thread& active_thread : threads) {
+        active_thread.join();
+    }
+    threads.clear();
+
+    saveChunks();
 }
 
 void ChunkManager::ThreadLoop() {
