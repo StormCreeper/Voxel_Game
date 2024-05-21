@@ -18,6 +18,7 @@ set(SOURCES
   world_builder.cpp
   chunks/chunk.cpp
   chunks/chunk_manager.cpp
+  chunks/chunk_dealer.cpp
   SimplexNoise.cpp
 
   utils/gl_includes.hpp
@@ -27,6 +28,7 @@ set(SOURCES
   gl_objects/texture.hpp
   chunks/chunk.hpp
   chunks/chunk_manager.hpp
+  chunks/chunk_dealer.hpp
   world_builder.hpp
   block_palette.hpp
   camera.hpp

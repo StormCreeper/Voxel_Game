@@ -3,6 +3,7 @@
 #include "gl_objects/shader.hpp"
 #include "gl_objects/texture.hpp"
 #include "chunks/chunk_manager.hpp"
+#include "chunks/chunk_dealer.hpp"
 #include "cube_map.hpp"
 
 #include "utils/gl_includes.hpp"
@@ -26,6 +27,7 @@ GLuint g_program{};  // A GPU program contains at least a vertex shader and a fr
 Player g_player{};
 
 ChunkManager g_chunkManager{};
+ChunkDealer *g_chunkDealer{};
 
 glm::mat4 g_viewMatrix;
 glm::mat4 g_projMatrix;
@@ -175,6 +177,8 @@ void initScene() {
     g_cubeMap = std::make_shared<CubeMap>();
     Chunk::init_chunks();
 
+    g_chunkDealer = new ChunkDealer(100, &g_chunkManager);
+
     // Init shader
 
     g_program = glCreateProgram();
@@ -260,6 +264,7 @@ void update(const float currentTimeInSec) {
 
 void clear() {
     g_chunkManager.destroy();
+    delete g_chunkDealer;
 
     glDeleteProgram(g_program);
 

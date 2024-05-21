@@ -5,6 +5,17 @@
 
 std::shared_ptr<Texture> Chunk::chunk_texture{};
 
+Chunk::Chunk(glm::ivec2 pos, ChunkManager *chunk_manager) {
+    mesh = std::make_shared<Mesh>();
+    this->chunk_manager = chunk_manager;
+    this->pos = pos;
+    this->modelMatrix = glm::translate(modelMatrix, glm::vec3(pos.x * chunk_size.x, 0, pos.y * chunk_size.z));
+
+    mesh->genBuffers();
+
+    allocate();
+}
+
 void Chunk::allocate() {
     voxelMap = (uint8_t *)realloc(voxelMap, num_blocks * sizeof(uint8_t));
     lightMap = (uint8_t *)realloc(lightMap, num_blocks * sizeof(uint8_t));
@@ -13,7 +24,6 @@ void Chunk::allocate() {
         exit(-1);
     }
 
-    // std::cout << "Allocated new chunk at (" << pos.x << ", " << pos.y << ")\n";
     allocated = true;
 }
 
@@ -116,17 +126,6 @@ void Chunk::push_face(DIR dir, int texIndex) {
             push_vertex({1, 0, 1}, {1, 1});
         } break;
     }
-}
-
-Chunk::Chunk(glm::ivec2 pos, ChunkManager *chunk_manager) {
-    mesh = std::make_shared<Mesh>();
-    this->chunk_manager = chunk_manager;
-    this->pos = pos;
-    this->modelMatrix = glm::translate(modelMatrix, glm::vec3(pos.x * chunk_size.x, 0, pos.y * chunk_size.z));
-
-    mesh->genBuffers();
-
-    // std::cout << "Init chunk at (" << pos.x << ", " << pos.y << ")\n";
 }
 
 void Chunk::build_mesh() {
