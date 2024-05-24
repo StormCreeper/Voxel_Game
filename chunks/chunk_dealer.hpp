@@ -22,20 +22,22 @@ class ChunkDealer {
             delete chunk;
     }
 
-    Chunk* getChunk(glm::ivec2 pos) {
+    Chunk* getChunk() {
         Chunk* res;
         if (chunk_pool.size() > 0) {
             res = chunk_pool[chunk_pool.size() - 1];
-            res->pos = pos;
             chunk_pool.pop_back();
         } else {
-            res = new Chunk(pos, chunk_manager);
+            res = new Chunk({}, chunk_manager);
         }
 
         return res;
     }
 
     void returnChunk(Chunk* chunk) {
+        chunk->hasBeenModified = false;
+        chunk->concurrent_use = false;
+        chunk->state = Allocated;
         chunk_pool.push_back(chunk);
     }
 };

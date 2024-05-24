@@ -26,7 +26,7 @@ GLuint g_program{};  // A GPU program contains at least a vertex shader and a fr
 
 Player g_player{};
 
-ChunkManager g_chunkManager{};
+ChunkManager *g_chunkManager{};
 ChunkDealer *g_chunkDealer{};
 
 glm::mat4 g_viewMatrix;
@@ -64,10 +64,10 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             shiftPressed = true;
 
         if (key == GLFW_KEY_R) {
-            g_chunkManager.reloadChunks();
+            g_chunkManager->reloadChunks();
         }
         if (key == GLFW_KEY_T) {
-            g_chunkManager.saveChunks();
+            g_chunkManager->saveChunks();
         }
         if (key == GLFW_KEY_LEFT) {
             int size = BlockPalette::block_descs.size();
@@ -95,9 +95,9 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
         glm::ivec3 normal{};
         glm::vec3 dir = glm::normalize(g_player.m_camera.get_target() - g_player.m_camera.get_position());
 
-        if (g_chunkManager.raycast(g_player.m_camera.get_position(), dir, 15, block_pos, normal)) {
+        if (g_chunkManager->raycast(g_player.m_camera.get_position(), dir, 15, block_pos, normal)) {
             std::cout << "Remove block !! at {" << block_pos.x << ", " << block_pos.y << ", " << block_pos.z << "} ? :(\n";
-            g_chunkManager.setBlock(block_pos, 0, true);
+            g_chunkManager->setBlock(block_pos, 0, true);
         } else {
             std::cout << "No block ? :(\n";
         }
@@ -108,9 +108,9 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
         glm::ivec3 normal{};
         glm::vec3 dir = glm::normalize(g_player.m_camera.get_target() - g_player.m_camera.get_position());
 
-        if (g_chunkManager.raycast(g_player.m_camera.get_position(), dir, 15, block_pos, normal)) {
+        if (g_chunkManager->raycast(g_player.m_camera.get_position(), dir, 15, block_pos, normal)) {
             std::cout << "Set block !! at {" << block_pos.x << ", " << block_pos.y << ", " << block_pos.z << "} ? Block ID: " << g_tool << " :(\n";
-            g_chunkManager.setBlock(block_pos + normal, g_tool, true);
+            g_chunkManager->setBlock(block_pos + normal, g_tool, true);
         } else {
             std::cout << "No block ? :(\n";
         }
@@ -177,7 +177,9 @@ void initScene() {
     g_cubeMap = std::make_shared<CubeMap>();
     Chunk::init_chunks();
 
-    g_chunkDealer = new ChunkDealer(100, &g_chunkManager);
+    g_chunkManager = new ChunkManager();
+    g_chunkDealer = new ChunkDealer(100, g_chunkManager);
+    g_chunkManager->chunk_dealer = g_chunkDealer;
 
     // Init shader
 
@@ -244,7 +246,7 @@ void render() {
 
     setUniform(g_program, "u_viewProjMat", g_projMatrix * g_viewMatrix);
 
-    g_chunkManager.renderAll(g_program, g_player.m_camera);
+    g_chunkManager->renderAll(g_program, g_player.m_camera);
 }
 
 float last_physic_time = 0;
@@ -257,13 +259,14 @@ void update(const float currentTimeInSec) {
 
     glm::vec3 cam_pos = g_player.m_camera.get_position();
 
-    g_chunkManager.updateQueue(cam_pos);
+    g_chunkManager->updateQueue(cam_pos);
 
-    g_chunkManager.unloadUselessChunks();
+    g_chunkManager->unloadUselessChunks();
 }
 
 void clear() {
-    g_chunkManager.destroy();
+    g_chunkManager->destroy();
+    delete g_chunkManager;
     delete g_chunkDealer;
 
     glDeleteProgram(g_program);

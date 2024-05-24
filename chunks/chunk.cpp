@@ -6,14 +6,17 @@
 std::shared_ptr<Texture> Chunk::chunk_texture{};
 
 Chunk::Chunk(glm::ivec2 pos, ChunkManager *chunk_manager) {
-    mesh = std::make_shared<Mesh>();
+    chunk_mesh.mesh = std::make_shared<Mesh>();
     this->chunk_manager = chunk_manager;
-    this->pos = pos;
-    this->modelMatrix = glm::translate(modelMatrix, glm::vec3(pos.x * chunk_size.x, 0, pos.y * chunk_size.z));
 
-    mesh->genBuffers();
+    chunk_mesh.mesh->genBuffers();
 
     allocate();
+}
+
+void Chunk::init(glm::ivec2 pos) {
+    this->pos = pos;
+    chunk_mesh.modelMatrix = glm::translate(chunk_mesh.modelMatrix, glm::vec3(pos.x * chunk_size.x, 0, pos.y * chunk_size.z));
 }
 
 void Chunk::allocate() {
@@ -24,7 +27,7 @@ void Chunk::allocate() {
         exit(-1);
     }
 
-    allocated = true;
+    state = BlockArrayInitialized;
 }
 
 void Chunk::free_mem() {
@@ -32,14 +35,10 @@ void Chunk::free_mem() {
         free(voxelMap);
     if (lightMap)
         free(lightMap);
-    // std::cout << "Freed chunk at (" << pos.x << ", " << pos.y << ")\n";
-    allocated = false;
+    state = EmptyChunk;
 }
 
 void Chunk::voxel_map_from_noise() {
-    if (!allocated)
-        allocate();
-
     for (int x = 0; x < chunk_size.x; x++) {
         for (int y = 0; y < chunk_size.y; y++) {
             for (int z = 0; z < chunk_size.z; z++) {
@@ -56,10 +55,10 @@ void Chunk::push_vertex(glm::ivec3 pos, glm::vec2 uv) {
     pos += world_offset;
     uv = tex_offset + uv * tex_size;
     GLuint ipos = pos.x + pos.z * (Chunk::chunk_size.x + 1) + pos.y * (Chunk::chunk_size.x + 1) * (Chunk::chunk_size.z + 1);
-    vp.push_back(ipos);
-    vn.push_back(light_level);
-    vuv.push_back(uv.x);
-    vuv.push_back(uv.y);
+    chunk_mesh.vp.push_back(ipos);
+    chunk_mesh.vn.push_back(light_level);
+    chunk_mesh.vuv.push_back(uv.x);
+    chunk_mesh.vuv.push_back(uv.y);
 }
 
 void Chunk::push_face(DIR dir, int texIndex) {
@@ -156,11 +155,11 @@ void Chunk::build_mesh() {
 
 void Chunk::send_mesh_to_gpu() {
     if (state == MeshBuilt) {
-        mesh->initGPUGeometry(vp, vn, vuv);
+        chunk_mesh.mesh->initGPUGeometry(chunk_mesh.vp, chunk_mesh.vn, chunk_mesh.vuv);
 
-        vp.clear();
-        vn.clear();
-        vuv.clear();
+        chunk_mesh.vp.clear();
+        chunk_mesh.vn.clear();
+        chunk_mesh.vuv.clear();
 
         state = Ready;
     } else {
@@ -195,7 +194,6 @@ void Chunk::generateLightMap() {
 }
 
 void Chunk::floodFill(glm::ivec3 block_pos, uint8_t value, bool sky, bool first) {
-    if (!allocated) allocate();
     if (off_bounds(block_pos)) {
         return;
     }
@@ -213,7 +211,7 @@ void Chunk::floodFill(glm::ivec3 block_pos, uint8_t value, bool sky, bool first)
 }
 
 uint8_t Chunk::getBlock(glm::ivec3 block_pos, bool rec) {
-    if (!allocated) return 0;
+    if (state < BlockArrayInitialized) return 0;
     if (off_bounds(block_pos)) {
         if (rec)
             return chunk_manager->getBlock({block_pos.x + pos.x * chunk_size.x,
@@ -226,10 +224,8 @@ uint8_t Chunk::getBlock(glm::ivec3 block_pos, bool rec) {
 }
 
 void Chunk::setBlock(glm::ivec3 block_pos, uint8_t block) {
-    if (!allocated) return;
-    if (off_bounds(block_pos)) {
-        return;
-    }
+    if (state < BlockArrayInitialized) return;
+    if (off_bounds(block_pos)) return;
 
     voxelMap[index(block_pos)] = block;
 
@@ -238,12 +234,13 @@ void Chunk::setBlock(glm::ivec3 block_pos, uint8_t block) {
 }
 
 uint8_t Chunk::get_light_value(glm::ivec3 block_pos, bool rec) {
-    if (!allocated) return 0;
+    if (state < BlockArrayInitialized) return 0;
     if (off_bounds(block_pos)) {
         if (rec)
             return chunk_manager->getLightValue({block_pos.x + pos.x * chunk_size.x,
                                                  block_pos.y,
                                                  block_pos.z + pos.y * chunk_size.z});
+        return 0b11111111;
     }
     return lightMap[index(block_pos)];
 }
@@ -259,5 +256,5 @@ void Chunk::render(GLuint program) {
     }
     if (state != Ready) return;
     setUniform(program, "u_chunkPos", glm::ivec3(pos.x, 0, pos.y));
-    mesh->render();
+    chunk_mesh.mesh->render();
 }

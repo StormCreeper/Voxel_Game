@@ -1,4 +1,5 @@
 #include "chunk_manager.hpp"
+#include "chunk_dealer.hpp"
 
 void ChunkManager::updateQueue(glm::vec3 world_pos) {
     this->cam_pos = world_pos;
@@ -9,13 +10,17 @@ void ChunkManager::updateQueue(glm::vec3 world_pos) {
             float dist = chunk_distance(chunk_pos);
             if (dist >= load_distance * Chunk::chunk_size.x) continue;
 
-            std::shared_ptr<Chunk> chunk{};
+            Chunk* chunk;
             map_mutex.lock();
             bool empty = chunks.find(chunk_pos) == chunks.end();
             map_mutex.unlock();
 
             if (empty) {
-                chunk = std::make_shared<Chunk>(chunk_pos, this);
+                chunk = chunk_dealer->getChunk();
+                chunk->out_of_thread = false;
+
+                chunk->init(chunk_pos);
+                // chunk->concurrent_use = true;
                 map_mutex.lock();
                 chunks.insert_or_assign(chunk_pos, chunk);
                 map_mutex.unlock();
@@ -40,18 +45,10 @@ void ChunkManager::unloadUselessChunks() {
         auto it = chunks.begin();
         while (it != chunks.end()) {
             glm::ivec2 chunk_pos = it->first;
-            float dist = chunk_distance(chunk_pos);
-            if (dist >= unload_distance * Chunk::chunk_size.x) {
-                auto tmp_it = it;
+            if (chunk_distance(chunk_pos) >= unload_distance * Chunk::chunk_size.x) {
+                if (it->second->concurrent_use)
+                    toDelete.push_back(it->second);
                 ++it;
-                if (tmp_it->second->hasBeenModified) {
-                    serializeChunk(tmp_it->first);
-                }
-                if (tmp_it->second->concurrent_use) {
-                    toDelete.push_back(tmp_it->second);
-                }
-                if (!tmp_it->second->concurrent_use)
-                    chunks.erase(tmp_it);
             } else {
                 ++it;
             }
@@ -60,12 +57,21 @@ void ChunkManager::unloadUselessChunks() {
 
     auto it = toDelete.begin();
     while (it != toDelete.end()) {
-        if (!it->get()->concurrent_use) {
-            auto tmp_it = it;
-            ++it;
+        auto tmp_it = it;
+        ++it;
+        Chunk* chunk = *tmp_it;
+
+        if (chunk && chunk->chunk_mutex.try_lock()) {
+            chunk->concurrent_use = true;
             toDelete.erase(tmp_it);
-        } else {
-            ++it;
+
+            if (chunk->hasBeenModified) {
+                serializeChunk(chunk->pos);
+            }
+
+            chunk_dealer->returnChunk(chunk);
+
+            chunk->chunk_mutex.unlock();
         }
     }
 }
@@ -73,14 +79,14 @@ void ChunkManager::unloadUselessChunks() {
 void ChunkManager::regenerateOneChunkMesh(glm::ivec2 chunk_pos) {
     map_mutex.lock();
     if (auto search = chunks.find(chunk_pos); search != chunks.end()) {
-        search->second->state = ChunkState::LightMapGenerated;
+        search->second->state = ChunkState::BlockArrayInitialized;
     }
     map_mutex.unlock();
 }
 
-std::shared_ptr<Chunk> ChunkManager::getChunkFromQueue() {
+Chunk* ChunkManager::getChunkFromQueue() {
     bool found_one = false;
-    std::shared_ptr<Chunk> chunk{};
+    Chunk* chunk{};
 
     while (!found_one) {
         if (taskQueue.empty()) {
@@ -90,12 +96,22 @@ std::shared_ptr<Chunk> ChunkManager::getChunkFromQueue() {
         chunk = taskQueue.front();
         taskQueue.pop_front();
 
-        float dist = chunk_distance(chunk->pos);
-        if (dist >= unload_distance * Chunk::chunk_size.x) continue;
+        if (!chunk) continue;
+        if (chunk->concurrent_use) {
+            taskQueue.push_back(chunk);
+            continue;
+        }
+
+        bool isInView = chunk_distance(chunk->pos) < unload_distance * Chunk::chunk_size.x;
 
         map_mutex.lock();
-        if (chunks.find(chunk->pos) != chunks.end() && chunk.get()) found_one = true;
+        bool isInMap = chunks.find(chunk->pos) != chunks.end();
         map_mutex.unlock();
+
+        if (isInView && isInMap)
+            found_one = true;
+        else
+            chunk_dealer->returnChunk(chunk);
     }
 
     return chunk;
@@ -120,12 +136,15 @@ void ChunkManager::destroy() {
     threads.clear();
 
     saveChunks();
+    for (const auto& [pos, chunk] : chunks) {
+        chunk_dealer->returnChunk(chunk);
+    }
 }
 
 void ChunkManager::ThreadLoop() {
     {
         while (true) {
-            std::shared_ptr<Chunk> chunk;
+            Chunk* chunk;
             {
                 std::unique_lock<std::mutex> lock(queue_mutex);
                 mutex_condition.wait(lock, [this] {
@@ -140,7 +159,7 @@ void ChunkManager::ThreadLoop() {
 
             if (!chunk) continue;
 
-            chunk->concurrent_use = true;
+            chunk->chunk_mutex.lock();
 
             if (!deserializeChunk(chunk)) {
                 if (chunk) {
@@ -163,6 +182,8 @@ void ChunkManager::ThreadLoop() {
             chunk->build_mesh();
 
             chunk->concurrent_use = false;
+            chunk->out_of_thread = true;
+            chunk->chunk_mutex.unlock();
         }
     }
 }
@@ -216,9 +237,12 @@ void ChunkManager::renderAll(GLuint program, Camera& camera) {
 
     map_mutex.lock();
     for (const auto& [pos, chunk] : chunks) {
-        if (!chunk->concurrent_use && isInFrustrum(pos, cam_dir, glm::radians(180.f))) {
+        if (chunk->out_of_thread && isInFrustrum(pos, cam_dir, glm::radians(180.f))) {
             map_mutex.unlock();
-            chunk->render(program);
+            if (chunk->chunk_mutex.try_lock()) {
+                chunk->render(program);
+                chunk->chunk_mutex.unlock();
+            }
             map_mutex.lock();
         }
     }
@@ -247,7 +271,7 @@ void ChunkManager::serializeChunk(glm::ivec2 chunk_pos) {
     }
 }
 
-bool ChunkManager::deserializeChunk(std::shared_ptr<Chunk> chunk) {
+bool ChunkManager::deserializeChunk(Chunk* chunk) {
     std::stringstream ss{};
     ss << "../map_data/" << chunk->pos.x << "." << chunk->pos.y << ".txt";
 
@@ -260,7 +284,6 @@ bool ChunkManager::deserializeChunk(std::shared_ptr<Chunk> chunk) {
 
     size_t size = Chunk::chunk_size.x * Chunk::chunk_size.y * Chunk::chunk_size.z * sizeof(char);
 
-    chunk->allocate();
     myfile.read((char*)chunk->voxelMap, size);
 
     myfile.close();

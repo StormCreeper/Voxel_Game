@@ -22,6 +22,15 @@ class ChunkManager;
 const int tex_num_x = 8;
 const int tex_num_y = 2;
 
+struct ChunkMesh {
+    std::vector<GLuint> vp{};
+    std::vector<float> vn{};
+    std::vector<float> vuv{};
+
+    std::shared_ptr<Mesh> mesh{};
+    glm::mat4 modelMatrix = glm::mat4(1.0f);
+};
+
 class Chunk {
    public:
     static inline constexpr glm::ivec3 chunk_size = {16, 128, 16};
@@ -29,20 +38,39 @@ class Chunk {
 
     static std::shared_ptr<Texture> chunk_texture;
 
-    std::atomic<ChunkState> state = EmptyChunk;
-    std::atomic_bool concurrent_use = false;
+   public:
+    uint8_t *voxelMap{};
+    bool hasBeenModified = false;
+    glm::ivec2 pos{};
 
+    std::atomic<ChunkState> state = EmptyChunk;
+    std::atomic<bool> concurrent_use = false;
+    std::atomic<bool> out_of_thread = false;
+    std::mutex chunk_mutex;
+
+   private:
+    ChunkMesh chunk_mesh;
+    uint8_t *lightMap{};
+
+    glm::ivec3 world_offset{};
+    glm::vec2 tex_offset{};
+    glm::vec2 tex_size{1, 1};
+    float light_level = 0;
+
+    ChunkManager *chunk_manager;
+
+   public:
     static void init_chunks() {
         BlockPalette::init_block_descs();
     }
-
-   public:
     /**
      * @brief Constructor for Chunk class.
      * @param pos Position of the chunk in chunk coordinates.
      * @param chunk_manager Pointer to the parent ChunkManager.
      */
     Chunk(glm::ivec2 pos, ChunkManager *chunk_manager);
+
+    void init(glm::ivec2 pos);
 
     /// @brief Destructor for Chunk class.
     ~Chunk() {
@@ -122,29 +150,6 @@ class Chunk {
      * @param texIndex Texture index.
      */
     void push_face(DIR dir, int texIndex);
-
-   public:
-    uint8_t *voxelMap{};
-    bool hasBeenModified = false;
-    glm::ivec2 pos{};
-
-   private:
-    std::vector<GLuint> vp{};
-    std::vector<float> vn{};
-    std::vector<float> vuv{};
-
-    uint8_t *lightMap{};
-
-    glm::ivec3 world_offset{};
-    glm::vec2 tex_offset{};
-    glm::vec2 tex_size{1, 1};
-    float light_level = 0;
-
-    bool allocated = false;
-    ChunkManager *chunk_manager;
-
-    std::shared_ptr<Mesh> mesh{};
-    glm::mat4 modelMatrix = glm::mat4(1.0f);
 };
 
 #endif  // CHUNK_HPP

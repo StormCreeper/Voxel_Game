@@ -4,7 +4,6 @@
 #include "chunk.hpp"
 #include "../camera.hpp"
 
-#include <memory>
 #include <map>
 #include <deque>
 #include <algorithm>
@@ -13,6 +12,8 @@
 #include <mutex>
 #include <condition_variable>
 #include <thread>
+
+class ChunkDealer;
 
 /// @brief A struct to compare the position of two Chunks, used for storing them in a map
 /// @relates ChunkManager
@@ -26,7 +27,7 @@ struct cmpChunkPos {
 struct cmpChunkPosOrigin {
     static inline glm::vec2 center{};
 
-    inline bool operator()(const std::shared_ptr<Chunk>& a, const std::shared_ptr<Chunk>& b) {
+    inline bool operator()(const Chunk* a, const Chunk* b) {
         glm::vec2 diff_a = center - (glm::vec2(a->pos) + glm::vec2(0.5, 0.5)) * glm::vec2(Chunk::chunk_size.x, Chunk::chunk_size.z);
         glm::vec2 diff_b = center - (glm::vec2(b->pos) + glm::vec2(0.5, 0.5)) * glm::vec2(Chunk::chunk_size.x, Chunk::chunk_size.z);
 
@@ -36,7 +37,9 @@ struct cmpChunkPosOrigin {
 
 class ChunkManager {
    public:
-    std::map<glm::ivec2, std::shared_ptr<Chunk>, cmpChunkPos> chunks{};
+    ChunkDealer* chunk_dealer;
+
+    std::map<glm::ivec2, Chunk*, cmpChunkPos> chunks{};
 
     std::mutex queue_mutex{};
     std::condition_variable mutex_condition{};
@@ -46,11 +49,11 @@ class ChunkManager {
     glm::vec3 cam_pos;
 
    private:
-    std::deque<std::shared_ptr<Chunk>>
+    std::deque<Chunk*>
         taskQueue{};
 
     std::mutex map_mutex{};
-    std::vector<std::shared_ptr<Chunk>> toDelete{};
+    std::vector<Chunk*> toDelete{};
 
     bool thread_pool_paused = false;
     int view_distance = 18;
@@ -93,7 +96,7 @@ class ChunkManager {
 
     void regenerateOneChunkMesh(glm::ivec2 chunk_pos);
 
-    std::shared_ptr<Chunk> getChunkFromQueue();
+    Chunk* getChunkFromQueue();
 
     void reloadChunks();
 
@@ -106,7 +109,7 @@ class ChunkManager {
     /// @param chunk_pos the pos of the chunk to save
     void serializeChunk(glm::ivec2 chunk_pos);
 
-    bool deserializeChunk(std::shared_ptr<Chunk> chunk);
+    bool deserializeChunk(Chunk* chunk);
 
     /// @brief Gets a block in world space -> chooses the right chunk and right offset
     /// @param world_pos the block pos in world space
