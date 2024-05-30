@@ -64,7 +64,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             shiftPressed = true;
 
         if (key == GLFW_KEY_R) {
-            g_chunkManager->reloadChunks();
+            // g_chunkManager->reloadChunks();
         }
         if (key == GLFW_KEY_T) {
             g_chunkManager->saveChunks();

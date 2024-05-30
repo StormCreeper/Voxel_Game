@@ -53,6 +53,7 @@ class ChunkManager {
         taskQueue{};
 
     std::mutex map_mutex{};
+    // TODO : change to glm::ivec2
     std::vector<Chunk*> toDelete{};
 
     bool thread_pool_paused = false;

@@ -76,6 +76,25 @@ void ChunkManager::unloadUselessChunks() {
     }
 }
 
+void ChunkManager::reloadChunks() {
+    queue_mutex.lock();
+    thread_pool_paused = true;
+    taskQueue.clear();
+    queue_mutex.unlock();
+    map_mutex.lock();
+    for (auto it : chunks) {
+        if (it.second->concurrent_use) {
+            toDelete.push_back(it.second);
+        }
+    }
+    map_mutex.unlock();
+
+    queue_mutex.lock();
+    thread_pool_paused = false;
+    queue_mutex.unlock();
+    std::cout << "Cleared all chunks\n";
+}
+
 void ChunkManager::regenerateOneChunkMesh(glm::ivec2 chunk_pos) {
     map_mutex.lock();
     if (auto search = chunks.find(chunk_pos); search != chunks.end()) {
@@ -98,7 +117,7 @@ Chunk* ChunkManager::getChunkFromQueue() {
 
         if (!chunk) continue;
         if (chunk->concurrent_use) {
-            taskQueue.push_back(chunk);
+            chunk_dealer->returnChunk(chunk);
             continue;
         }
 
@@ -139,6 +158,8 @@ void ChunkManager::destroy() {
     for (const auto& [pos, chunk] : chunks) {
         chunk_dealer->returnChunk(chunk);
     }
+
+    chunks.clear();
 }
 
 void ChunkManager::ThreadLoop() {
@@ -188,26 +209,6 @@ void ChunkManager::ThreadLoop() {
     }
 }
 
-void ChunkManager::reloadChunks() {
-    queue_mutex.lock();
-    thread_pool_paused = true;
-    taskQueue.clear();
-    queue_mutex.unlock();
-    map_mutex.lock();
-    for (auto it : chunks) {
-        if (it.second->concurrent_use) {
-            toDelete.push_back(it.second);
-        }
-    }
-    chunks.clear();
-    map_mutex.unlock();
-
-    queue_mutex.lock();
-    thread_pool_paused = false;
-    queue_mutex.unlock();
-    std::cout << "Cleared all chunks\n";
-}
-
 void ChunkManager::saveChunks() {
     map_mutex.lock();
     for (const auto& [pos, chunk] : chunks) {
@@ -237,7 +238,7 @@ void ChunkManager::renderAll(GLuint program, Camera& camera) {
 
     map_mutex.lock();
     for (const auto& [pos, chunk] : chunks) {
-        if (chunk->out_of_thread && isInFrustrum(pos, cam_dir, glm::radians(180.f))) {
+        if (chunk->out_of_thread /* && isInFrustrum(pos, cam_dir, glm::radians(180.f))*/) {
             map_mutex.unlock();
             if (chunk->chunk_mutex.try_lock()) {
                 chunk->render(program);

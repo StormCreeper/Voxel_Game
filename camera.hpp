@@ -31,7 +31,7 @@ class Camera {
         set_aspect_ratio(static_cast<float>(width) / static_cast<float>(height));
 
         set_near(0.1);
-        set_far(500);
+        set_far(5000);
 
         set_fov(90);
 

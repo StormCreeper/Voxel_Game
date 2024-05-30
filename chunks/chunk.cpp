@@ -22,6 +22,8 @@ void Chunk::init(glm::ivec2 pos) {
 void Chunk::allocate() {
     voxelMap = (uint8_t *)realloc(voxelMap, num_blocks * sizeof(uint8_t));
     lightMap = (uint8_t *)realloc(lightMap, num_blocks * sizeof(uint8_t));
+    memset(lightMap, 0b11111111, num_blocks * sizeof(uint8_t));
+
     if (!voxelMap || !lightMap) {
         std::cout << "NOOOOOOO no room left :( youre computer is ded :(\n";
         exit(-1);
@@ -168,6 +170,8 @@ void Chunk::send_mesh_to_gpu() {
 }
 
 void Chunk::generateLightMap() {
+    state = LightMapGenerated;
+    return;
     std::fill(lightMap, lightMap + num_blocks, 0b00000001);
     for (int x = 0; x < Chunk::chunk_size.x; x++) {
         for (int z = 0; z < Chunk::chunk_size.z; z++) {
