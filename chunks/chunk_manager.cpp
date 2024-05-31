@@ -20,7 +20,6 @@ void ChunkManager::updateQueue(glm::vec3 world_pos) {
                 chunk->out_of_thread = false;
 
                 chunk->init(chunk_pos);
-                // chunk->concurrent_use = true;
                 map_mutex.lock();
                 chunks.insert_or_assign(chunk_pos, chunk);
                 map_mutex.unlock();
@@ -46,24 +45,22 @@ void ChunkManager::unloadUselessChunks() {
         while (it != chunks.end()) {
             glm::ivec2 chunk_pos = it->first;
             if (chunk_distance(chunk_pos) >= unload_distance * Chunk::chunk_size.x) {
-                if (it->second->concurrent_use)
-                    toDelete.push_back(it->second);
-                ++it;
+                toDelete.push(it->second);
+                it = chunks.erase(it);
             } else {
                 ++it;
             }
         }
     }
 
-    auto it = toDelete.begin();
-    while (it != toDelete.end()) {
-        auto tmp_it = it;
-        ++it;
-        Chunk* chunk = *tmp_it;
+    std::queue<Chunk*> undeleted{};
+
+    while (!toDelete.empty()) {
+        Chunk* chunk = toDelete.front();
+        toDelete.pop();
 
         if (chunk && chunk->chunk_mutex.try_lock()) {
             chunk->concurrent_use = true;
-            toDelete.erase(tmp_it);
 
             if (chunk->hasBeenModified) {
                 serializeChunk(chunk->pos);
@@ -72,7 +69,14 @@ void ChunkManager::unloadUselessChunks() {
             chunk_dealer->returnChunk(chunk);
 
             chunk->chunk_mutex.unlock();
+        } else {
+            undeleted.push(chunk);
         }
+    }
+
+    while (!undeleted.empty()) {
+        toDelete.push(undeleted.front());
+        undeleted.pop();
     }
 }
 
@@ -84,7 +88,7 @@ void ChunkManager::reloadChunks() {
     map_mutex.lock();
     for (auto it : chunks) {
         if (it.second->concurrent_use) {
-            toDelete.push_back(it.second);
+            toDelete.push(it.second);
         }
     }
     map_mutex.unlock();
@@ -116,10 +120,6 @@ Chunk* ChunkManager::getChunkFromQueue() {
         taskQueue.pop_front();
 
         if (!chunk) continue;
-        if (chunk->concurrent_use) {
-            chunk_dealer->returnChunk(chunk);
-            continue;
-        }
 
         bool isInView = chunk_distance(chunk->pos) < unload_distance * Chunk::chunk_size.x;
 
@@ -212,7 +212,7 @@ void ChunkManager::ThreadLoop() {
 void ChunkManager::saveChunks() {
     map_mutex.lock();
     for (const auto& [pos, chunk] : chunks) {
-        if (!chunk->concurrent_use && chunk->hasBeenModified)
+        if (chunk->out_of_thread && chunk->hasBeenModified)
             serializeChunk(pos);
     }
     map_mutex.unlock();
@@ -327,24 +327,6 @@ uint8_t ChunkManager::getLightValue(glm::ivec3 world_pos) {
         return search->second->get_light_value({chunk_coords.x, world_pos.y, chunk_coords.y}, false);
     } else
         return 0;
-}
-
-void ChunkManager::floodFill(glm::ivec3 world_pos, uint8_t value, bool sky) {
-    glm::ivec2 chunk_pos = glm::ivec2(
-        floor(world_pos.x / (float)Chunk::chunk_size.x),
-        floor(world_pos.z / (float)Chunk::chunk_size.z));
-
-    glm::ivec2 chunk_coords = glm::ivec2(world_pos.x, world_pos.z) - chunk_pos * glm::ivec2(Chunk::chunk_size.x, Chunk::chunk_size.z);
-
-    map_mutex.lock();
-    auto search = chunks.find(chunk_pos);
-    auto end = chunks.end();
-    map_mutex.unlock();
-
-    if (search != end) {
-        if (!search->second->concurrent_use)
-            search->second->floodFill({chunk_coords.x, world_pos.y, chunk_coords.y}, value, sky);
-    }
 }
 
 void ChunkManager::setBlock(glm::ivec3 world_pos, uint8_t block, bool rebuild) {

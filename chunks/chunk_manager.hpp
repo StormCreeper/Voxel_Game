@@ -6,6 +6,7 @@
 
 #include <map>
 #include <deque>
+#include <queue>
 #include <algorithm>
 #include <fstream>
 #include <sstream>
@@ -54,7 +55,7 @@ class ChunkManager {
 
     std::mutex map_mutex{};
     // TODO : change to glm::ivec2
-    std::vector<Chunk*> toDelete{};
+    std::queue<Chunk*> toDelete{};
 
     bool thread_pool_paused = false;
     int view_distance = 18;
@@ -118,8 +119,6 @@ class ChunkManager {
     uint8_t getBlock(glm::ivec3 world_pos);
 
     uint8_t getLightValue(glm::ivec3 world_pos);
-
-    void floodFill(glm::ivec3 world_pos, uint8_t value, bool sky);
 
     /// @brief Sets a block in world space -> chooses the right chunk and right offset
     /// @param world_pos the block pos in world space
