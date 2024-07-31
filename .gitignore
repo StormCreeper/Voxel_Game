@@ -1,4 +1,3 @@
 build/
 .vscode/
 /map_data/*
-.favorites.json
