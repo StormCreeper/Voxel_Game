@@ -61,8 +61,8 @@ class Camera {
         glfwSetCursorPos(window, screen_center.x, screen_center.y);
 
         if (true || mouse_pressed) {
-            m_yaw -= mouse_delta_pos.x * 0.005f;
-            m_pitch += mouse_delta_pos.y * 0.005f;
+            m_yaw -= mouse_delta_pos.x * 0.002f;
+            m_pitch += mouse_delta_pos.y * 0.002f;
 
             float max = glm::pi<float>() / 2 - 0.01f;
 

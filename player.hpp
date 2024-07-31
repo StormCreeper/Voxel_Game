@@ -22,7 +22,7 @@ class Player {
     /// @brief Updates the camera position and target vector based on input and pitch and yaw
     void update(float delta_time) {
         // Adjust camera position based on input keys (WASD)
-        float camera_speed = 30.f * delta_time;
+        float camera_speed = 10.f * delta_time;
         if (speed_pressed) camera_speed *= 4.f;
         glm::vec3 front;
         glm::vec3 right;
