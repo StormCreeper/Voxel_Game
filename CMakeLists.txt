@@ -47,6 +47,10 @@ target_link_libraries(${PROJECT_NAME} glfw)
 add_subdirectory(dep/glm)
 target_link_libraries(${PROJECT_NAME} glm)
 
+set(JSON_BuildTests OFF CACHE INTERNAL "")
+add_subdirectory(dep/json)
+target_link_libraries(${PROJECT_NAME} nlohmann_json::nlohmann_json)
+
 target_link_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS})
 
 # Create a custom target to copy resources to the build directory (Added by Telo PHILIPPE)
