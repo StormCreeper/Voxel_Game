@@ -1,3 +1,23 @@
 {
-    "name": "grass"
+    "name": "grass",
+    "faces": {
+        "front": {
+            "texture": "grass_block_side"
+        },
+        "back": {
+            "texture": "grass_block_side"
+        },
+        "left": {
+            "texture": "grass_block_side"
+        },
+        "right": {
+            "texture": "grass_block_side"
+        },
+        "up": {
+            "texture": "grass_block_top"
+        },
+        "down": {
+            "texture": "dirt"
+        }
+    }
 }

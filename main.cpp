@@ -170,7 +170,7 @@ void initOpenGL() {
     glDebugMessageCallback(glDebugOutput, nullptr);
     glDebugMessageControl(GL_DEBUG_SOURCE_API, GL_DEBUG_TYPE_ERROR, GL_DEBUG_SEVERITY_HIGH, 0, nullptr, GL_TRUE);
 
-    glfwSwapInterval(0);
+    // glfwSwapInterval(0);
 }
 
 void initScene() {

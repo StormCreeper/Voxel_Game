@@ -20,6 +20,7 @@ class Texture {
     void load(const std::string &filename);
     void bind() const;
     void unbind() const;
+    inline GLuint getID() const { return m_textureID; }
 
     ~Texture();
 
